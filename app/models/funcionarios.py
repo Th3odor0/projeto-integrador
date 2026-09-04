@@ -1,4 +1,4 @@
-class Funcionarios:
+class Funcionario:
     def __init__(self, id, nome, cpf, cargo):
         
         self._id = id

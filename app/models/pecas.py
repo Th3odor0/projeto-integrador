@@ -1,4 +1,4 @@
-class Pecas:
+class Peca:
     def __init__(self, id, nome, codigo, quantidade_estoque, preco_venda):
         self._id = id
         self._nome = nome

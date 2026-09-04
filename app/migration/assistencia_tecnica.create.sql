@@ -11,7 +11,6 @@ CREATE TABLE funcionarios (
     nome VARCHAR(100) NOT NULL,
     cpf VARCHAR(14) NOT NULL UNIQUE,
     cargo VARCHAR(50) NOT NULL,
-    ativo BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 CREATE TABLE equipamentos (

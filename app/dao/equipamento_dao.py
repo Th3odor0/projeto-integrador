@@ -5,11 +5,11 @@ class EquipamentoDAO(DAO):
     def __init__(self, database, cliente_dao):
         super().__init__(database)
         self._cliente = cliente_dao
-        
-def save(self, equipamento):
-    conexao, cursor = self.conectar()
-    try:
-        sql = """
+
+    def save(self, equipamento):
+        conexao, cursor = self.conectar()
+        try:
+            sql = """
                 INSERT INTO EQUIPAMENTOS
                 (
                     TIPO,
@@ -23,37 +23,36 @@ def save(self, equipamento):
                     %s,
                     %s,
                     %s,
+                    %s,
                     %s
                 )
-              """
-        cursor.execute(
-            sql,
-            (
-                equipamento.tipo,
-                equipamento.marca,
-                equipamento.modelo,
-                equipamento.numero_serie,
-                equipamento.cliente_id
+            """
+            cursor.execute(
+                sql,
+                (
+                    equipamento.tipo,
+                    equipamento.marca,
+                    equipamento.modelo,
+                    equipamento.numero_serie,
+                    equipamento.cliente_id
+                )
             )
-        )
+            
+            conexao.commit()
+            equipamento.id = cursor.lastrowid
+            return equipamento
         
-        conexao.commit()
-        
-        equipamento.id = cursor.lastrowid
+        except Exception:
+            conexao.rollback()
+            raise
 
-        return equipamento
-    
-    except Exception:
-        conexao.rollback()
-        raise
+        finally:
+            self.desconectar(cursor, conexao)
 
-    finally:
-        self.desconectar(cursor, conexao)
-
-def get_all(self):
-    conexao, cursor = self.conectar()
-    try:
-        sql ="""
+    def get_all(self):
+        conexao, cursor = self.conectar()
+        try:
+            sql = """
                 SELECT
                     ID,
                     TIPO,
@@ -64,32 +63,31 @@ def get_all(self):
                 FROM
                     EQUIPAMENTOS
                 ORDER BY
-                    NOME    
-              """
-        cursor.execute(sql)
-        registros = cursor.fetchall()
-        equipamentos = []
-        for registro in registros:
-            cliente_id = self._cliente.dao.get_by_id(
-                registro[5]
-            )
-            equipamentos.append(
-                Equipamento(
-                    registro[0],
-                    registro[1],
-                    registro[2],
-                    registro[3],
-                    registro[4]
-                )                
-            )
-        return equipamentos
-    finally:
-        self.desconectar(cursor, conexao)
+                    TIPO
+            """
+            cursor.execute(sql)
+            registros = cursor.fetchall()
+            equipamentos = []
+            for registro in registros:
+                cliente = self._cliente.get_by_id(registro[5])
+                equipamentos.append(
+                    Equipamento(
+                        id=registro[0],
+                        tipo=registro[1],
+                        marca=registro[2],
+                        modelo=registro[3],
+                        numero_serie=registro[4],
+                        cliente=cliente
+                    )
+                )
+            return equipamentos
+        finally:
+            self.desconectar(cursor, conexao)
 
-def get_by_id(self, id):
-    conexao, cursor = self.conectar()
-    try:
-        sql = """
+    def get_by_id(self, id):
+        conexao, cursor = self.conectar()
+        try:
+            sql = """
                 SELECT
                     ID,
                     TIPO,
@@ -101,28 +99,27 @@ def get_by_id(self, id):
                     EQUIPAMENTOS
                 WHERE
                     ID = %s
-              """
-        cursor.execute(sql, (id,))
-        registro = cursor.fetchone()
-        if registro:
-            cliente_id = self._cliente.dao.get_by_id(
-                registro[5]
-            )
-            return Equipamento(
-                registro[0],
-                registro[1],
-                registro[2],
-                registro[3],
-                registro[4]
-            )
-        return None
-    finally:
-        self.desconectar(cursor, conexao)
+            """
+            cursor.execute(sql, (id,))
+            registro = cursor.fetchone()
+            if registro:
+                cliente = self._cliente.get_by_id(registro[5])
+                return Equipamento(
+                    id=registro[0],
+                    tipo=registro[1],
+                    marca=registro[2],
+                    modelo=registro[3],
+                    numero_serie=registro[4],
+                    cliente=cliente
+                )
+            return None
+        finally:
+            self.desconectar(cursor, conexao)
 
-def update(self, equipamento):
-    conexao, cursor = self.conectar()
-    try:
-        sql = """
+    def update(self, equipamento):
+        conexao, cursor = self.conectar()
+        try:
+            sql = """
                 UPDATE EQUIPAMENTOS
                 SET
                     TIPO = %s,
@@ -132,38 +129,38 @@ def update(self, equipamento):
                     CLIENTE_ID = %s
                 WHERE
                     ID = %s
-              """
-        cursor.execute(
-            sql,
-            (
-                equipamento.tipo,
-                equipamento.marca,
-                equipamento.modelo,
-                equipamento.numero_serie,
-                equipamento.cliente_id,
-                equipamento.id
+            """
+            cursor.execute(
+                sql,
+                (
+                    equipamento.tipo,
+                    equipamento.marca,
+                    equipamento.modelo,
+                    equipamento.numero_serie,
+                    equipamento.cliente_id,
+                    equipamento.id
+                )
             )
-        )
-        conexao.commit()
-        return cursor.rowcount > 0
-    except Exception:
-        conexao.rollback()
-        raise
-    finally:
-        self.desconectar(cursor, conexao)
+            conexao.commit()
+            return cursor.rowcount > 0
+        except Exception:
+            conexao.rollback()
+            raise
+        finally:
+            self.desconectar(cursor, conexao)
 
-def delete(self, id):
-    conexao, cursor = self.conectar()
-    try:
-        sql = """
+    def delete(self, id):
+        conexao, cursor = self.conectar()
+        try:
+            sql = """
                 DELETE FROM EQUIPAMENTOS
                 WHERE ID = %s
-              """
-        cursor.execute(sql, (id,))
-        conexao.commit()
-        return cursor.rowcount > 0
-    except Exception:
-        conexao.rollback()
-        raise
-    finally:
-        self.desconectar(cursor, conexao)
+            """
+            cursor.execute(sql, (id,))
+            conexao.commit()
+            return cursor.rowcount > 0
+        except Exception:
+            conexao.rollback()
+            raise
+        finally:
+            self.desconectar(cursor, conexao)

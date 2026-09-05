@@ -1,4 +1,4 @@
-class Orden_servico:
+class Ordem_servico:
     def __init__(self,
                  id,
                  data_entrada,

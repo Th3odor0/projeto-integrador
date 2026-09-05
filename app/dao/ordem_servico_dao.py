@@ -10,27 +10,25 @@ class Ordem_servico_DAO(DAO):
 
     def save(self, ordem_servico):
         conexao, cursor = self.conectar()
-        try: 
+        try:
             sql = """
-                    INSERT INTO ORDENS_SERVICO
+                    INSERT INTO ordens_servico
                     (
-                        ID_CLIENTE,
-                        ID_FUNCIONARIO,
-                        ID_EQUIPAMENTO,
-                        DATA_ABERTURA,
-                        DATA_FECHAMENTO,
-                        STATUS,
-                        DESCRICAO
+                        cliente_id,
+                        funcionario_id,
+                        equipamento_id,
+                        data_entrada,
+                        data_conclusao,
+                        status,
+                        problema,
+                        diagnostico,
+                        valor_total,
+                        forma_pagamento,
+                        dias_garantia
                     )
                     VALUES
                     (
-                        %s,
-                        %s,
-                        %s,
-                        %s,
-                        %s,
-                        %s,
-                        %s
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                     )
                   """
             cursor.execute(
@@ -39,19 +37,23 @@ class Ordem_servico_DAO(DAO):
                     ordem_servico.cliente.id,
                     ordem_servico.funcionario.id,
                     ordem_servico.equipamento.id,
-                    ordem_servico.data_abertura,
-                    ordem_servico.data_fechamento,
+                    ordem_servico.data_entrada,
+                    ordem_servico.data_conclusao,
                     ordem_servico.status,
-                    ordem_servico.descricao
+                    ordem_servico.problema,
+                    ordem_servico.diagnostico,
+                    ordem_servico.valor_total,
+                    ordem_servico.forma_pagamento,
+                    ordem_servico.dias_garantia
                 )
             )
-            
+
             conexao.commit()
-            
+
             ordem_servico.id = cursor.lastrowid
 
             return ordem_servico
-        
+
         except Exception:
             conexao.rollback()
             raise
@@ -64,16 +66,20 @@ class Ordem_servico_DAO(DAO):
         try:
             sql = """
                     SELECT
-                        ID,
-                        ID_CLIENTE,
-                        ID_FUNCIONARIO,
-                        ID_EQUIPAMENTO,
-                        DATA_ABERTURA,
-                        DATA_FECHAMENTO,
-                        STATUS,
-                        DESCRICAO
+                        id,
+                        cliente_id,
+                        funcionario_id,
+                        equipamento_id,
+                        data_entrada,
+                        data_conclusao,
+                        status,
+                        problema,
+                        diagnostico,
+                        valor_total,
+                        forma_pagamento,
+                        dias_garantia
                     FROM
-                        ORDENS_SERVICO
+                        ordens_servico
                   """
             cursor.execute(sql)
             resultados = cursor.fetchall()
@@ -85,78 +91,87 @@ class Ordem_servico_DAO(DAO):
                     cliente=self.cliente_dao.get_by_id(resultado[1]),
                     funcionario=self.funcionario_dao.get_by_id(resultado[2]),
                     equipamento=self.equipamento_dao.get_by_id(resultado[3]),
-                    data_abertura=resultado[4],
-                    data_fechamento=resultado[5],
+                    data_entrada=resultado[4],
+                    data_conclusao=resultado[5],
                     status=resultado[6],
-                    descricao=resultado[7]
+                    problema=resultado[7],
+                    diagnostico=resultado[8],
+                    valor_total=resultado[9],
+                    forma_pagamento=resultado[10],
+                    dias_garantia=resultado[11]
                 )
                 ordens_servico.append(Ordem_servico)
 
             return ordens_servico
 
-        except Exception:
-            raise
-
         finally:
-            self.desconectar(cursor, conexao)                                   
+            self.desconectar(cursor, conexao)
 
     def get_by_id(self, id):
         conexao, cursor = self.conectar()
         try:
             sql = """
                     SELECT
-                        ID,
-                        ID_CLIENTE,
-                        ID_FUNCIONARIO,
-                        ID_EQUIPAMENTO,
-                        DATA_ABERTURA,
-                        DATA_FECHAMENTO,
-                        STATUS,
-                        DESCRICAO
+                        id,
+                        cliente_id,
+                        funcionario_id,
+                        equipamento_id,
+                        data_entrada,
+                        data_conclusao,
+                        status,
+                        problema,
+                        diagnostico,
+                        valor_total,
+                        forma_pagamento,
+                        dias_garantia
                     FROM
-                        ORDENS_SERVICO
+                        ordens_servico
                     WHERE
-                        ID = %s
+                        id = %s
                   """
             cursor.execute(sql, (id,))
             resultado = cursor.fetchone()
 
             if resultado:
-                ordem_servico = Ordem_servico(
+                return Ordem_servico(
                     id=resultado[0],
                     cliente=self.cliente_dao.get_by_id(resultado[1]),
                     funcionario=self.funcionario_dao.get_by_id(resultado[2]),
                     equipamento=self.equipamento_dao.get_by_id(resultado[3]),
-                    data_abertura=resultado[4],
-                    data_fechamento=resultado[5],
+                    data_entrada=resultado[4],
+                    data_conclusao=resultado[5],
                     status=resultado[6],
-                    descricao=resultado[7]
+                    problema=resultado[7],
+                    diagnostico=resultado[8],
+                    valor_total=resultado[9],
+                    forma_pagamento=resultado[10],
+                    dias_garantia=resultado[11]
                 )
-                return ordem_servico
 
             return None
 
-        except Exception:
-            raise
-
         finally:
-            self.desconectar(cursor, conexao)                                   
+            self.desconectar(cursor, conexao)
 
     def update(self, ordem_servico):
         conexao, cursor = self.conectar()
         try:
             sql = """
-                    UPDATE ORDENS_SERVICO
+                    UPDATE ordens_servico
                     SET
-                        ID_CLIENTE = %s,
-                        ID_FUNCIONARIO = %s,
-                        ID_EQUIPAMENTO = %s,
-                        DATA_ABERTURA = %s,
-                        DATA_FECHAMENTO = %s,
-                        STATUS = %s,
-                        DESCRICAO = %s
+                        cliente_id = %s,
+                        funcionario_id = %s,
+                        equipamento_id = %s,
+                        data_entrada = %s,
+                        data_conclusao = %s,
+                        status = %s,
+                        problema = %s,
+                        diagnostico = %s,
+                        valor_total = %s,
+                        forma_pagamento = %s,
+                        dias_garantia = %s
                     WHERE
-                        ID = %s
+                        id = %s
                   """
             cursor.execute(
                 sql,
@@ -164,18 +179,22 @@ class Ordem_servico_DAO(DAO):
                     ordem_servico.cliente.id,
                     ordem_servico.funcionario.id,
                     ordem_servico.equipamento.id,
-                    ordem_servico.data_abertura,
-                    ordem_servico.data_fechamento,
+                    ordem_servico.data_entrada,
+                    ordem_servico.data_conclusao,
                     ordem_servico.status,
-                    ordem_servico.descricao,
+                    ordem_servico.problema,
+                    ordem_servico.diagnostico,
+                    ordem_servico.valor_total,
+                    ordem_servico.forma_pagamento,
+                    ordem_servico.dias_garantia,
                     ordem_servico.id
                 )
             )
-            
+
             conexao.commit()
 
             return ordem_servico
-        
+
         except Exception:
             conexao.rollback()
             raise
@@ -183,16 +202,11 @@ class Ordem_servico_DAO(DAO):
         finally:
             self.desconectar(cursor, conexao)
 
-
     def delete(self, id):
         conexao, cursor = self.conectar()
         try:
-            sql = """
-                    DELETE FROM ORDENS_SERVICO
-                    WHERE ID = %s
-                  """
+            sql = "DELETE FROM ordens_servico WHERE id = %s"
             cursor.execute(sql, (id,))
-            
             conexao.commit()
 
         except Exception:

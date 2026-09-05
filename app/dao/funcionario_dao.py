@@ -1,24 +1,22 @@
 from app.dao.dao import DAO
-from app.models.cliente import Cliente
+from app.models.funcionario import Funcionario
 
-class Cliente_DAO(DAO):
+class Funcionario_DAO(DAO):
     def __init__(self, database):
         super().__init__(database)
 
-    def save(self, cliente):
+    def save(self, funcionario):
         conexao, cursor = self.conectar()
         try: 
             sql = """
-                    INSERT INTO CLIENTES
+                    INSERT INTO FUNCIONARIOS
                     (
                         NOME,
                         CPF,
-                        TELEFONE,
-                        EMAIL
+                        CARGO
                     )
                     VALUES
                     (
-                        %s,
                         %s,
                         %s,
                         %s
@@ -27,18 +25,17 @@ class Cliente_DAO(DAO):
             cursor.execute(
                 sql,
                 (
-                    cliente.nome,
-                    cliente.cpf,
-                    cliente.telefone,
-                    cliente.email
+                    funcionario.nome,
+                    funcionario.cpf,
+                    funcionario.cargo
                 )
             )
             
             conexao.commit()
             
-            cliente.id = cursor.lastrowid
+            funcionario.id = cursor.lastrowid
 
-            return cliente
+            return funcionario
         
         except Exception:
             conexao.rollback()
@@ -51,14 +48,14 @@ class Cliente_DAO(DAO):
         conexao, cursor = self.conectar()
         try:
             sql = """
+
                     SELECT
                         ID,
                         NOME,
                         CPF,
-                        TELEFONE,
-                        EMAIL
+                        CARGO
                     FROM 
-                        CLIENTES
+                        FUNCIONARIOS
                     ORDER BY
                         NOME
                   """
@@ -67,22 +64,21 @@ class Cliente_DAO(DAO):
 
             registros = cursor.fetchall()
 
-            clientes = []
+            funcionarios = []
 
             for registro in registros:
-                clientes.append(
-                    Cliente( 
+                funcionarios.append(
+                    Funcionario( 
                     registro[0],
                     registro[1],
                     registro[2],
-                    registro[3],
-                    registro[4]
+                    registro[3]
                     )
                 )
-            return clientes
+            return funcionarios
         
         finally:
-            self.desconectar(cursor, conexao)
+            self.desconectar(cursor, conexao)   
 
     def get_by_id(self, id):
         conexao, cursor = self.conectar()
@@ -92,91 +88,73 @@ class Cliente_DAO(DAO):
                         ID,
                         NOME,
                         CPF,
-                        TELEFONE,
-                        EMAIL
-                    FROM
-                        CLIENTES
+                        CARGO
+                    FROM 
+                        FUNCIONARIOS
                     WHERE
                         ID = %s
                   """
             
-            conexao.execute(sql,(id,))
+            cursor.execute(sql, (id,))
 
             registro = cursor.fetchone()
 
-            if registro is None:
+            if registro:
+                return Funcionario(
+                    registro[0],
+                    registro[1],
+                    registro[2],
+                    registro[3]
+                )
+            else:
                 return None
-            
-            return Cliente(
-                registro[0],
-                registro[1],
-                registro[2],
-                registro[3],
-                registro[4]
-            )
         
         finally:
             self.desconectar(cursor, conexao)
 
-    def update(self, cliente):
+    def update(self, funcionario):
         conexao, cursor = self.conectar()
         try:
-            sql = """
-                    UPDATE CLIENTES
-                    SET
+            sql ="""
+                   UPDATE FUNCIONARIOS
+                   SET
                         NOME = %s,
                         CPF = %s,
-                        TELEFONE = %s,
-                        EMAIL = %s
-                    WHERE
+                        CARGO = %s
+                   WHERE
                         ID = %s
-                  """
-            
-            conexao.execute(
+                 """
+            cursor.execute(
                 sql,
                 (
-                    cliente.nome,
-                    cliente.cpf,
-                    cliente.telefone,
-                    cliente.email   
+                    funcionario.nome,
+                    funcionario.cpf,
+                    funcionario.cargo,
+                    funcionario.id
                 )
             )
-
             conexao.commit()
-
-            return cursor.rowcount > 0
-        
+            sucesso = cursor.rowcount > 0
+            return sucesso
         except Exception:
-
             conexao.rollback()
             raise
-
         finally:
             self.desconectar(cursor, conexao)
 
     def delete(self, id):
         conexao, cursor = self.conectar()
         try:
-            sql ="""
-                    DELETE
-                    FROM CLIENTES
+            sql = """
+                    DELETE FROM FUNCIONARIOS
                     WHERE ID = %s
-                 """
-            
+                  """
             cursor.execute(sql, (id,))
-
-            conexao.commmit()
-
-            return cursor.rowcount > 0
-        
+            conexao.commit()
+            sucesso = cursor.rowcount > 0
+            return sucesso
         except Exception:
             conexao.rollback()
             raise
-
         finally:
             self.desconectar(cursor, conexao)
-
-
-
-
-            

@@ -17,6 +17,9 @@ class Ordem_servico_View(tk.Frame):
         self._criar_widgets()
         self._carregar_combos()
 
+        # Sem isso, o Frame nunca aparece dentro do Toplevel (janela fica em branco)
+        self.pack(fill="both", expand=True)
+
     def _criar_widgets(self):
         linha = 0
 

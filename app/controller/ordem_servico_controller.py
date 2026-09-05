@@ -1,4 +1,3 @@
-from app.dao.ordem_servico_dao import Ordem_servico_DAO
 from app.models.ordens_servico import Ordem_servico
 from app.core.dataUltils import DataUtils
 
@@ -116,5 +115,3 @@ class Ordem_servico_Controller:
         # Garante que existe antes de tentar excluir (evita exclusão silenciosa de algo inexistente)
         self.buscar_por_id(id)
         self.ordem_servico_dao.delete(id)
-
-        

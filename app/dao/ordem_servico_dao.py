@@ -86,7 +86,7 @@ class Ordem_servico_DAO(DAO):
 
             ordens_servico = []
             for resultado in resultados:
-                ordens_servico = Ordem_servico(
+                ordem_servico = Ordem_servico(
                     id=resultado[0],
                     cliente=self.cliente_dao.get_by_id(resultado[1]),
                     funcionario=self.funcionario_dao.get_by_id(resultado[2]),
@@ -100,7 +100,7 @@ class Ordem_servico_DAO(DAO):
                     forma_pagamento=resultado[10],
                     dias_garantia=resultado[11]
                 )
-                ordens_servico.append(Ordem_servico)
+                ordens_servico.append(ordem_servico)
 
             return ordens_servico
 
@@ -208,6 +208,7 @@ class Ordem_servico_DAO(DAO):
             sql = "DELETE FROM ordens_servico WHERE id = %s"
             cursor.execute(sql, (id,))
             conexao.commit()
+            return cursor.rowcount > 0
 
         except Exception:
             conexao.rollback()

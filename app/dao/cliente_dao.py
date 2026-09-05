@@ -63,7 +63,7 @@ class Cliente_DAO(DAO):
                         NOME
                   """
             
-            conexao.execute(sql)
+            cursor.execute(sql)
 
             registros = cursor.fetchall()
 
@@ -100,7 +100,7 @@ class Cliente_DAO(DAO):
                         ID = %s
                   """
             
-            conexao.execute(sql,(id,))
+            cursor.execute(sql, (id,))
 
             registro = cursor.fetchone()
 
@@ -132,13 +132,14 @@ class Cliente_DAO(DAO):
                         ID = %s
                   """
             
-            conexao.execute(
+            cursor.execute(
                 sql,
                 (
                     cliente.nome,
                     cliente.cpf,
                     cliente.telefone,
-                    cliente.email   
+                    cliente.email,
+                    cliente.id
                 )
             )
 
@@ -165,7 +166,7 @@ class Cliente_DAO(DAO):
             
             cursor.execute(sql, (id,))
 
-            conexao.commmit()
+            conexao.commit()
 
             return cursor.rowcount > 0
         
@@ -175,8 +176,3 @@ class Cliente_DAO(DAO):
 
         finally:
             self.desconectar(cursor, conexao)
-
-
-
-
-            

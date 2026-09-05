@@ -60,7 +60,7 @@ class Funcionario_DAO(DAO):
                         NOME
                   """
             
-            conexao.execute(sql)
+            cursor.execute(sql)
 
             registros = cursor.fetchall()
 

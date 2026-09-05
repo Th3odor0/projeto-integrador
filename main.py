@@ -2,13 +2,16 @@ import tkinter as tk
 from app.core.database import Database
 
 # DAOs das entidades necessárias para Ordem de Serviço
-from app.dao.cliente_dao import ClienteDAO
-from app.dao.funcionario_dao import FuncionarioDAO
+from app.dao.cliente_dao import Cliente_DAO
+from app.dao.funcionario_dao import Funcionario_DAO
 from app.dao.equipamento_dao import EquipamentoDAO
-from app.dao.ordem_servico_dao import OrdemServicoDAO
+from app.dao.ordem_servico_dao import Ordem_servico_DAO
+
+# Controller
+from app.controller.ordem_servico_controller import Ordem_servico_Controller
 
 # View
-from app.view.ordem_servico_view import OrdemServicoView
+from app.view.ordem_servico_view import Ordem_servico_View
 
 
 class ErpApplication:
@@ -22,13 +25,21 @@ class ErpApplication:
         self._configurar_janela()
 
         # 1. Instancia as DAOs dependentes
-        self._dao_cliente = ClienteDAO(self._database)
-        self._dao_funcionario = FuncionarioDAO(self._database)
-        self._dao_equipamento = EquipamentoDAO(self._database)
+        self._dao_cliente = Cliente_DAO(self._database)
+        self._dao_funcionario = Funcionario_DAO(self._database)
+        self._dao_equipamento = EquipamentoDAO(self._database, self._dao_cliente)
 
         # 2. Injeta as dependências na DAO principal
-        self._dao_ordem_servico = OrdemServicoDAO(
+        self._dao_ordem_servico = Ordem_servico_DAO(
             self._database,
+            self._dao_cliente,
+            self._dao_funcionario,
+            self._dao_equipamento
+        )
+
+        # 3. Controller usa a DAO principal + as DAOs auxiliares
+        self._controller_ordem_servico = Ordem_servico_Controller(
+            self._dao_ordem_servico,
             self._dao_cliente,
             self._dao_funcionario,
             self._dao_equipamento
@@ -71,7 +82,13 @@ class ErpApplication:
 
         janela = tk.Toplevel(self._root)
         self._janela_ordem_servico = janela
-        OrdemServicoView(janela, self._dao_ordem_servico)
+        Ordem_servico_View(
+            janela,
+            self._controller_ordem_servico,
+            self._dao_cliente,
+            self._dao_funcionario,
+            self._dao_equipamento
+        )
 
     def run(self):
         self._root.mainloop()

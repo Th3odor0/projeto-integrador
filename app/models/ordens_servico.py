@@ -2,7 +2,7 @@ from app.models.clientes import Cliente
 from app.models.funcionarios import Funcionario
 from app.models.equipamentos import Equipamento
 
-class Orden_servico:
+class Ordem_servico:
     def __init__(self,
                  id,
                  data_entrada,

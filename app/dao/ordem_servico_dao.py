@@ -12,7 +12,7 @@ class Ordem_servico_DAO(DAO):
         conexao, cursor = self.conectar()
         try: 
             sql = """
-                    INSERT INTO ORDEM_SERVICO
+                    INSERT INTO ORDENS_SERVICO
                     (
                         ID_CLIENTE,
                         ID_FUNCIONARIO,
@@ -73,14 +73,14 @@ class Ordem_servico_DAO(DAO):
                         STATUS,
                         DESCRICAO
                     FROM
-                        ORDEM_SERVICO
+                        ORDENS_SERVICO
                   """
             cursor.execute(sql)
             resultados = cursor.fetchall()
 
             ordens_servico = []
             for resultado in resultados:
-                ordem_servico = Ordem_servico(
+                ordens_servico = Ordem_servico(
                     id=resultado[0],
                     cliente=self.cliente_dao.get_by_id(resultado[1]),
                     funcionario=self.funcionario_dao.get_by_id(resultado[2]),
@@ -90,7 +90,7 @@ class Ordem_servico_DAO(DAO):
                     status=resultado[6],
                     descricao=resultado[7]
                 )
-                ordens_servico.append(ordem_servico)
+                ordens_servico.append(Ordem_servico)
 
             return ordens_servico
 
@@ -114,7 +114,7 @@ class Ordem_servico_DAO(DAO):
                         STATUS,
                         DESCRICAO
                     FROM
-                        ORDEM_SERVICO
+                        ORDENS_SERVICO
                     WHERE
                         ID = %s
                   """
@@ -146,7 +146,7 @@ class Ordem_servico_DAO(DAO):
         conexao, cursor = self.conectar()
         try:
             sql = """
-                    UPDATE ORDEM_SERVICO
+                    UPDATE ORDENS_SERVICO
                     SET
                         ID_CLIENTE = %s,
                         ID_FUNCIONARIO = %s,
@@ -188,7 +188,7 @@ class Ordem_servico_DAO(DAO):
         conexao, cursor = self.conectar()
         try:
             sql = """
-                    DELETE FROM ORDEM_SERVICO
+                    DELETE FROM ORDENS_SERVICO
                     WHERE ID = %s
                   """
             cursor.execute(sql, (id,))

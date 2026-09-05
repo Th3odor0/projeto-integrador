@@ -41,7 +41,7 @@ class FuncionarioController:
             return False, "\n".join(erros)
 
         if self._cpf_ja_cadastrado(cpf):
-            return False, 
+            return False, "CPF já cadastrado."
 
         funcionario = Funcionario(None, nome.strip(), cpf.strip(), cargo.strip())
 
@@ -63,15 +63,15 @@ class FuncionarioController:
 
         existente = self._cpf_ja_cadastrado(cpf)
         if existente and existente.id != id:
-            return False, 
+            return False, "CPF já cadastrado."
 
         funcionario.atualizar_dados(nome.strip(), cpf.strip(), cargo.strip())
 
         try:
             sucesso = self.dao.update(funcionario)
             if sucesso:
-                return True, 
-            return False,
+                return True, "Funcionário atualizado com sucesso."
+            return False, "Não foi possível atualizar o funcionário."
         except Exception as erro:
             return False, f"Erro ao atualizar funcionário: {erro}"
 
@@ -83,8 +83,8 @@ class FuncionarioController:
         try:
             sucesso = self.dao.delete(id)
             if sucesso:
-                return True, 
-            return False,
+                return True, "Funcionário excluído com sucesso."
+            return False, "Não foi possível excluir o funcionário."
         except Exception as erro:
             return False, f"Erro ao excluir funcionário: {erro}"
 

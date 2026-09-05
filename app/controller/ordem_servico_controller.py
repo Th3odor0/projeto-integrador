@@ -1,4 +1,4 @@
-from app.models.ordens_servico import Ordem_servico
+from app.models.ordem_servico import Ordem_servico
 from app.core.dataUltils import DataUtils
 
 

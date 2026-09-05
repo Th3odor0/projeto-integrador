@@ -1,4 +1,4 @@
-from app.models.ordens_servico import Orden_servico
+from app.models.ordem_servico import Ordem_servico
 from app.models.pecas import Peca
 
 class Ordem_servico_peca:
@@ -6,7 +6,7 @@ class Ordem_servico_peca:
                  id,
                  quantidade,
                  valor_unitario,
-                 id_ordem_servico=Orden_servico,
+                 id_ordem_servico=Ordem_servico,
                  id_peca=Peca):
         self._id = id
         self._quantidade = quantidade

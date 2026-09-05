@@ -1,7 +1,3 @@
-from app.models.clientes import Cliente
-from app.models.funcionarios import Funcionario
-from app.models.equipamentos import Equipamento
-
 class Orden_servico:
     def __init__(self,
                  id,
@@ -13,9 +9,9 @@ class Orden_servico:
                  valor_total,
                  forma_pagamento,
                  dias_garantia,
-                 id_cliente=Cliente,
-                 id_funcionarios=Funcionario,
-                 id_equipamentos=Equipamento):
+                 cliente,
+                 funcionario,
+                 equipamento):
         self._id = id
         self._data_entrada = data_entrada
         self._data_conclusao = data_conclusao 
@@ -25,9 +21,9 @@ class Orden_servico:
         self._valor_total = valor_total
         self._forma_pagamento = forma_pagamento
         self._dias_garantia = dias_garantia 
-        self._id_cliente = id_cliente
-        self._id_funcionarios = id_funcionarios 
-        self._id_equipamentos = id_equipamentos
+        self._cliente = cliente
+        self._funcionario = funcionario
+        self._equipamento = equipamento
 
     def atualizar_dados(self,
                         nova_entrada,
@@ -52,16 +48,16 @@ class Orden_servico:
     def id(self):
         return self._id
     @property
-    def id_cliente(self):
-        return self._id_cliente
+    def cliente(self):
+        return self._cliente
     @property
-    def id_funcionario(self):
-        return self._id_funcionarios
+    def funcionario(self):
+        return self._funcionario
     @property
-    def id_equipamentos(Self):
+    def equipamento(self):
+        return self._equipamento
         Self._id_equipamentos
     
-
     @property
     def status(self):
         return self._status

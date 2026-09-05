@@ -1,5 +1,5 @@
 from app.models.ordens_servico import Orden_servico
-from app.models.servicos import Servico
+from app.models.servico import Servico
 
 class Ordem_servico_servico:
     def __init__(self, id, valor_cobrado, id_servico=Servico, id_ordem_servico=Orden_servico):

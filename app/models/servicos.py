@@ -1,4 +1,4 @@
-class Servicos:
+class Servico:
     def __init__(self,  id, nome, descricao, valor_padrao):
         self._id = id
         self._nome = nome 

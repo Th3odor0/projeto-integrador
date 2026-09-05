@@ -1,6 +1,6 @@
 from app.models.clientes import Cliente
 
-class Equipamentos:
+class Equipamento:
     def __init__(self, tipo, marca, modelo, numero_serie, id_cliente=Cliente):
         self._id = id
         self._tipo = tipo 

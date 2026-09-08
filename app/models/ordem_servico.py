@@ -56,7 +56,7 @@ class Ordem_servico:
     @property
     def equipamento(self):
         return self._equipamento
-        Self._id_equipamentos
+        Self._equipamento
     
     @property
     def status(self):

@@ -1,4 +1,4 @@
-from app.models.ordens_servico import Orden_servico
+from app.models.ordem_servico import Orden_servico
 from app.models.servico import Servico
 
 class Ordem_servico_servico:

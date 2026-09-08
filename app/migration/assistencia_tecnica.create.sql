@@ -10,7 +10,7 @@ CREATE TABLE funcionarios (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(100) NOT NULL,
     cpf VARCHAR(14) NOT NULL UNIQUE,
-    cargo VARCHAR(50) NOT NULL,
+    cargo VARCHAR(50) NOT NULL 
 );
 
 CREATE TABLE equipamentos (

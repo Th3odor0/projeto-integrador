@@ -1,5 +1,5 @@
 from app.dao.dao import DAO
-from app.models.ordens_servico import Ordem_servico
+from app.models.ordem_servico import Ordem_servico
 
 class Ordem_servico_DAO(DAO):
     def __init__(self, database, cliente_dao, funcionario_dao, equipamento_dao):

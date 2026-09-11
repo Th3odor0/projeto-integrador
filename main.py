@@ -9,10 +9,10 @@ from app.dao.ordem_servico_dao import Ordem_servico_DAO
 
 # Controller
 from app.controller.ordem_servico_controller import Ordem_servico_Controller
-
+from app.controller.cliente_controller import ClienteController
 # View
 from app.view.ordem_servico_view import Ordem_servico_View
-
+from app.view.cliente_view import Cliente_View
 
 class ErpApplication:
 
@@ -21,6 +21,7 @@ class ErpApplication:
         self._root = tk.Tk()
 
         self._janela_ordem_servico = None
+        self._janela_cliente = None
 
         self._configurar_janela()
 
@@ -44,6 +45,7 @@ class ErpApplication:
             self._dao_funcionario,
             self._dao_equipamento
         )
+        self._controller_cliente = ClienteController(self._dao_cliente)
 
         self._criar_menu()
 
@@ -59,6 +61,10 @@ class ErpApplication:
         menu_atendimento.add_command(
             label="Ordens de Serviço",
             command=self._abrir_ordem_servico
+        )
+        menu_atendimento.add_command(
+            label="Clientes",
+            command=self._abrir_cliente
         )
         menu_principal.add_cascade(
             label="Atendimento",
@@ -89,6 +95,17 @@ class ErpApplication:
             self._dao_funcionario,
             self._dao_equipamento
         )
+
+    def _abrir_cliente(self):
+        # Evita duplicar a abertura da mesma janela no Tkinter
+        if self._janela_cliente is not None and self._janela_cliente.winfo_exists():
+            self._janela_cliente.lift()
+            self._janela_cliente.focus_force()
+            return
+
+        janela = tk.Toplevel(self._root)
+        self._janela_cliente = janela
+        Cliente_View(janela, self._controller_cliente)
 
     def run(self):
         self._root.mainloop()

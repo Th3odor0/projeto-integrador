@@ -12,7 +12,7 @@ from app.controller.ordem_servico_controller import Ordem_servico_Controller
 from app.controller.cliente_controller import ClienteController
 # View
 from app.view.ordem_servico_view import Ordem_servico_View
-from app.view.cliente_view import Cliente_View
+from app.view.cliente_view import Cliente_view
 
 class ErpApplication:
 
@@ -105,7 +105,7 @@ class ErpApplication:
 
         janela = tk.Toplevel(self._root)
         self._janela_cliente = janela
-        Cliente_View(janela, self._controller_cliente)
+        Cliente_view(janela, self._controller_cliente)
 
     def run(self):
         self._root.mainloop()

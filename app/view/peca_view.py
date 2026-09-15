@@ -3,6 +3,7 @@ from tkinter import ttk, messagebox
 
 
 class Peca_View(tk.Frame):
+   
 
     CAMPOS_TEXTO = [
         ("nome", "Nome:"),
@@ -84,7 +85,7 @@ class Peca_View(tk.Frame):
         """Busca as peças no controller e repopula a Treeview."""
         self.tbl_pecas.delete(*self.tbl_pecas.get_children())
 
-        for peca in self.controller.listar_todas():
+        for peca in self.controller.listar_todos():
             self.tbl_pecas.insert("", tk.END, values=(
                 peca.id,
                 peca.nome,
@@ -111,10 +112,9 @@ class Peca_View(tk.Frame):
             return
 
         id_peca = self.tbl_pecas.item(selecao[0])["values"][0]
-        try:
-            peca = self.controller.buscar_por_id(id_peca)
-        except ValueError as erro:
-            self._exibir_mensagem("Erro", str(erro), sucesso=False)
+        peca = self.controller.buscar_por_id(id_peca)
+        if peca is None:
+            self._exibir_mensagem("Erro", "Peça não encontrada.", sucesso=False)
             return
 
         self._preencher_campos(peca)
@@ -163,17 +163,27 @@ class Peca_View(tk.Frame):
     # Ações dos botões (CRUD)
     # ------------------------------------------------------------------
 
-    def _executar_operacao(self, operacao, mensagem_sucesso):
-        """Roda uma operação do controller tratando os erros de forma padronizada."""
+    def _executar_operacao(self, chamada_controller, mensagem_sucesso):
+        """
+        Executa uma chamada ao controller que retorna (sucesso, mensagem_ou_objeto).
+        Erros de validação levantados na coleta dos dados da própria view
+        (ex.: quantidade/preço não numérico) também são tratados aqui.
+        """
         try:
-            operacao()
+            sucesso, resultado = chamada_controller()
+        except ValueError as erro:
+            self._exibir_mensagem("Erro de validação", str(erro), sucesso=False)
+            return
+        except Exception as erro:
+            self._exibir_mensagem("Erro inesperado", f"Ocorreu um erro: {erro}", sucesso=False)
+            return
+
+        if sucesso:
             self._exibir_mensagem("Sucesso", mensagem_sucesso)
             self._limpar_campos()
             self._atualizar_treeview()
-        except ValueError as erro:
-            self._exibir_mensagem("Erro de validação", str(erro), sucesso=False)
-        except Exception as erro:
-            self._exibir_mensagem("Erro inesperado", f"Ocorreu um erro: {erro}", sucesso=False)
+        else:
+            self._exibir_mensagem("Erro", resultado, sucesso=False)
 
     def _novo(self):
         """Limpa o formulário para cadastrar uma nova peça."""

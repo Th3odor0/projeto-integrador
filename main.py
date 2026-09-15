@@ -34,10 +34,13 @@ class ErpApplication:
 
         self._configurar_janela()
 
-        # 1. Instancia as DAOs dependentes
+        # DAOs indenpendentes
         self._dao_cliente = Cliente_DAO(self._database)
         self._dao_funcionario = Funcionario_DAO(self._database)
         self._dao_equipamento = EquipamentoDAO(self._database, self._dao_cliente)
+        self._dao_peca = PecaDAO(self._database)
+        self._dao_servico = ServicoDAO(self._database)
+    
 
         # 2. Injeta as dependências na DAO principal
         self._dao_ordem_servico = Ordem_servico_DAO(
@@ -56,7 +59,8 @@ class ErpApplication:
         )
         self._controller_cliente = ClienteController(self._dao_cliente)
         self._controller_funcionario = FuncionarioController(self._dao_funcionario)
-
+        self._controller_peca = PecaController(self._dao_peca)
+        self._controller_servico = ServicoController(self._dao_servico)
         self._criar_menu()
 
     def _configurar_janela(self):
@@ -109,7 +113,7 @@ class ErpApplication:
             self._dao_funcionario,
             self._dao_equipamento
         )
-
+    
     def _abrir_cliente(self):
         # Evita duplicar a abertura da mesma janela no Tkinter
         if self._janela_cliente is not None and self._janela_cliente.winfo_exists():

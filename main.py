@@ -6,14 +6,23 @@ from app.dao.cliente_dao import Cliente_DAO
 from app.dao.funcionario_dao import Funcionario_DAO
 from app.dao.equipamento_dao import EquipamentoDAO
 from app.dao.ordem_servico_dao import Ordem_servico_DAO
-
+from app.dao.ordem_servico_pecas_dao import Ordem_Servico_Peca_DAO
+from app.dao.peca_dao import PecaDAO
+from app.dao.servico_dao import ServicoDAO
 # Controller
 from app.controller.ordem_servico_controller import Ordem_servico_Controller
 from app.controller.cliente_controller import ClienteController
+from app.controller.funcionario_controller import FuncionarioController
+from app.controller.peca_controller import PecaController
+from app.controller.servico_controller import ServicoController
 # View
 from app.view.ordem_servico_view import Ordem_servico_View
 from app.view.cliente_view import Cliente_view
-
+from app.view.equipamento_view import Equipamento_View
+from app.view.funcionario_view import Funcionario_View
+from app.view.ordem_servico_pecas_view import Ordem_servico_Peca_View
+from app.view.ordem_servico_servico_view import Ordem_servico_Servico_View
+from app.view.servico_view import Servico_View
 class ErpApplication:
 
     def __init__(self):
@@ -46,6 +55,7 @@ class ErpApplication:
             self._dao_equipamento
         )
         self._controller_cliente = ClienteController(self._dao_cliente)
+        self._controller_funcionario = FuncionarioController(self._dao_funcionario)
 
         self._criar_menu()
 
@@ -65,6 +75,10 @@ class ErpApplication:
         menu_atendimento.add_command(
             label="Clientes",
             command=self._abrir_cliente
+        )
+        menu_atendimento.add_command(
+            label="Funcionarios",
+            command=self._abrir_funcionario
         )
         menu_principal.add_cascade(
             label="Atendimento",
@@ -106,6 +120,16 @@ class ErpApplication:
         janela = tk.Toplevel(self._root)
         self._janela_cliente = janela
         Cliente_view(janela, self._controller_cliente)
+
+    def _abrir_funcionario(self):
+
+        if self._janela_funcionario is not None and self._janela_funcionario.winfo_exists():
+            self._janela_funcionario.lift()
+            self._janela_funcionario.focus_force()
+            return
+        janela = tk.Toplevel(self._root)
+        self._janela_funcionario = janela
+        Funcionario_View(janela, self._controller_funcionario)
 
     def run(self):
         self._root.mainloop()

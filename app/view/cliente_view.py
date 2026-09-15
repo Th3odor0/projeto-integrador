@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import ttk, messagebox
 
 class Cliente_view(tk.Frame):
     def __init__(self, master, cliente_controller):
@@ -9,12 +9,13 @@ class Cliente_view(tk.Frame):
 
         self.master.title("Cadastro de Clientes")
         self._criar_widgets()
+        self._carregar_lista()
 
         # Sem isso, o Frame nunca aparece dentro da janela (Toplevel fica em branco)
         self.pack(fill=tk.BOTH, expand=True)
 
     def _criar_widgets(self):
-        """Monta todos os campos de entrada e os botões da tela."""
+        """Monta todos os campos de entrada, os botões e a lista da tela."""
         linha = 0
 
         # --- Campo ID (somente leitura: só é preenchido automaticamente pelo sistema,
@@ -51,17 +52,88 @@ class Cliente_view(tk.Frame):
         # --- Botões de ação, um do lado do outro na mesma linha ---
         frame_botoes = tk.Frame(self)
         frame_botoes.grid(row=linha, column=0, columnspan=2, pady=10)
+        linha += 1
 
         tk.Button(frame_botoes, text="Salvar", command=self._salvar).pack(side="left", padx=5)
         tk.Button(frame_botoes, text="Atualizar", command=self._atualizar).pack(side="left", padx=5)
         tk.Button(frame_botoes, text="Deletar", command=self._deletar).pack(side="left", padx=5)
         tk.Button(frame_botoes, text="Novo", command=self._limpar_campos).pack(side="left", padx=5)
 
+        # --- Lista de clientes já cadastrados ---
+        frame_lista = tk.Frame(self)
+        frame_lista.grid(row=linha, column=0, columnspan=2, sticky="nsew", padx=10, pady=(0, 10))
+
+        # Deixa a lista esticar quando a janela for redimensionada
+        self.grid_rowconfigure(linha, weight=1)
+        self.grid_columnconfigure(1, weight=1)
+
+        colunas = ("id", "nome", "cpf", "telefone", "email")
+        self.tree = ttk.Treeview(frame_lista, columns=colunas, show="headings")
+        self.tree.heading("id", text="ID")
+        self.tree.heading("nome", text="Nome")
+        self.tree.heading("cpf", text="CPF")
+        self.tree.heading("telefone", text="Telefone")
+        self.tree.heading("email", text="Email")
+
+        self.tree.column("id", width=40)
+        self.tree.column("nome", width=180)
+        self.tree.column("cpf", width=110)
+        self.tree.column("telefone", width=110)
+        self.tree.column("email", width=180)
+
+        self.tree.pack(fill="both", expand=True, side="left")
+
+        scrollbar = ttk.Scrollbar(frame_lista, orient="vertical", command=self.tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        self.tree.configure(yscrollcommand=scrollbar.set)
+
+        self.tree.bind("<<TreeviewSelect>>", self._selecionar_cliente)
+
+    def _carregar_lista(self):
+        """Atualiza a Treeview com os clientes cadastrados, vindos do Controller."""
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+
+        sucesso, resultado = self.controller.buscar_todos()
+        if not sucesso:
+            messagebox.showerror("Erro", resultado)
+            return
+
+        for cliente in resultado:
+            self.tree.insert(
+                "", "end",
+                values=(cliente.id, cliente.nome, cliente.cpf, cliente.telefone, cliente.email)
+            )
+
+    def _selecionar_cliente(self, event):
+        """Ao clicar numa linha da lista, carrega os dados no formulário (inclusive o ID)."""
+        selecionado = self.tree.focus()
+        if not selecionado:
+            return
+
+        valores = self.tree.item(selecionado, "values")
+        if not valores:
+            return
+
+        self._set_id(valores[0])
+
+        self.entry_nome.delete(0, tk.END)
+        self.entry_nome.insert(0, valores[1])
+
+        self.entry_cpf.delete(0, tk.END)
+        self.entry_cpf.insert(0, valores[2])
+
+        self.entry_telefone.delete(0, tk.END)
+        self.entry_telefone.insert(0, valores[3])
+
+        self.entry_email.delete(0, tk.END)
+        self.entry_email.insert(0, valores[4])
+
     def _set_id(self, valor):
         """
         Escreve (ou limpa) o campo ID mesmo ele estando readonly.
-        Usado pelo próprio sistema: depois de salvar (mostra o ID gerado pelo MySQL)
-        ou ao carregar um cliente existente pra atualizar/deletar.
+        Usado pelo próprio sistema: depois de salvar (mostra o ID gerado pelo MySQL),
+        ao selecionar um cliente na lista, ou ao limpar o formulário.
         """
         self.entry_id.config(state="normal")
         self.entry_id.delete(0, tk.END)
@@ -95,10 +167,10 @@ class Cliente_view(tk.Frame):
         )
 
         if sucesso:
-            novo_id = resultado  # esperado: o Controller devolve o ID gerado (lastrowid)
-            messagebox.showinfo("Sucesso", f"Cliente cadastrado com sucesso! ID: {novo_id}")
+            novo_id = resultado.id  # 'resultado' é o objeto Cliente; o ID gerado está em .id
+            messagebox.showinfo("Sucesso", f"Cliente cadastrado com sucesso!")
             self._limpar_campos()
-            self._set_id(novo_id)
+            self._carregar_lista()
         else:
             # 'resultado' aqui é a mensagem de erro vinda do Controller (validação ou CPF duplicado)
             messagebox.showerror("Erro", resultado)
@@ -120,6 +192,7 @@ class Cliente_view(tk.Frame):
         if sucesso:
             messagebox.showinfo("Sucesso", resultado)
             self._limpar_campos()
+            self._carregar_lista()
         else:
             messagebox.showerror("Erro", resultado)
 
@@ -137,6 +210,7 @@ class Cliente_view(tk.Frame):
         if sucesso:
             messagebox.showinfo("Sucesso", resultado)
             self._limpar_campos()
+            self._carregar_lista()
         else:
             messagebox.showerror("Erro", resultado)
 

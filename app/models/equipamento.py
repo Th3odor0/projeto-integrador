@@ -1,9 +1,7 @@
-from app.models.cliente import Cliente
-
 class Equipamento:
-    def __init__(self, tipo, marca, modelo, numero_serie, id_cliente=Cliente):
+    def __init__(self, id, tipo, marca, modelo, numero_serie, id_cliente=None):
         self._id = id
-        self._tipo = tipo 
+        self._tipo = tipo
         self._marca = marca
         self._modelo = modelo
         self._numero_serie = numero_serie
@@ -21,7 +19,7 @@ class Equipamento:
     @id.setter
     def id(self, novo_id):
         self._id = novo_id
-    
+
     @property
     def tipo(self):
         return self._tipo
@@ -31,7 +29,7 @@ class Equipamento:
 
     @property
     def marca(self):
-        return self._marca 
+        return self._marca
     @marca.setter
     def marca(self, nova_marca):
         self._marca = nova_marca
@@ -50,10 +48,9 @@ class Equipamento:
     def numero_serie(self, novo_numero):
         self._numero_serie = novo_numero
 
-
     @property
     def id_cliente(self):
         return self._id_cliente
     @id_cliente.setter
     def id_cliente(self, novo_id_cliente):
-        self._id_cliente = novo_id_cliente    
+        self._id_cliente = novo_id_cliente

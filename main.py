@@ -64,6 +64,7 @@ class ErpApplication:
         self._controller_funcionario = FuncionarioController(self._dao_funcionario)
         self._controller_peca = PecaController(self._dao_peca)
         self._controller_servico = ServicoController(self._dao_servico)
+        self._controller_equipamento = EquipamentoController(self._dao_equipamento, self._dao_cliente)
         self._criar_menu()
 
     def _configurar_janela(self):
@@ -149,7 +150,7 @@ class ErpApplication:
             return
         janela = tk.Toplevel(self._root)
         self._janela_equipamento = janela
-        Equipamento_View(janela, self._controller_servico)
+        Equipamento_View(janela, self._controller_equipamento, self._dao_cliente)
 
     def run(self):
         self._root.mainloop()

@@ -15,6 +15,7 @@ from app.controller.cliente_controller import ClienteController
 from app.controller.funcionario_controller import FuncionarioController
 from app.controller.peca_controller import PecaController
 from app.controller.servico_controller import ServicoController
+from app.controller.equipamento_controller import EquipamentoController
 # View
 from app.view.ordem_servico_view import Ordem_servico_View
 from app.view.cliente_view import Cliente_view

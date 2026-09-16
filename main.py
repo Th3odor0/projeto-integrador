@@ -24,6 +24,7 @@ from app.view.funcionario_view import Funcionario_View
 from app.view.ordem_servico_pecas_view import Ordem_servico_Peca_View
 from app.view.ordem_servico_servico_view import Ordem_servico_Servico_View
 from app.view.servico_view import Servico_View
+from app.view.peca_view import Peca_View
 class ErpApplication:
 
     def __init__(self):
@@ -34,6 +35,8 @@ class ErpApplication:
         self._janela_cliente = None
         self._janela_funcionario = None
         self._janela_equipamento = None
+        self._janela_servico = None
+        self._janela_peca = None
 
         self._configurar_janela()
 
@@ -91,6 +94,14 @@ class ErpApplication:
         menu_atendimento.add_command(
             label="Equipamentos",
             command=self._abrir_equipamento
+        )
+        menu_atendimento.add_command(
+            label="Serviços",
+            command=self._abrir_servico
+        )
+        menu_atendimento.add_command(
+            label="Peças",
+            command=self._abrir_peca
         )
         menu_principal.add_cascade(
             label="Atendimento",
@@ -151,6 +162,25 @@ class ErpApplication:
         janela = tk.Toplevel(self._root)
         self._janela_equipamento = janela
         Equipamento_View(janela, self._controller_equipamento, self._dao_cliente)
+        
+
+    def _abrir_servico(self):
+        if self._janela_servico is not None and self._janela_servico.winfo_exists():
+            self._janela_servico.lift()
+            self._janela_servico.focus_force()
+            return
+        janela = tk.Toplevel(self._root)
+        self._janela_servico = janela
+        Servico_View(janela, self._controller_servico)
+
+    def _abrir_peca(self):
+        if self._janela_peca is not None and self._janela_peca.winfo_exists():
+            self._janela_peca.lift()
+            self._janela_peca.focus_force()
+            return
+        janela = tk.Toplevel(self._root)
+        self._janela_peca = janela
+        Peca_View(janela, self._controller_peca)
 
     def run(self):
         self._root.mainloop()

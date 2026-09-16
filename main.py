@@ -33,6 +33,7 @@ class ErpApplication:
         self._janela_ordem_servico = None
         self._janela_cliente = None
         self._janela_funcionario = None
+        self._janela_equipamento = None
 
         self._configurar_janela()
 
@@ -86,6 +87,10 @@ class ErpApplication:
             label="Funcionarios",
             command=self._abrir_funcionario
         )
+        menu_atendimento.add_command(
+            label="Equipamentos",
+            command=self._abrir_equipamento
+        )
         menu_principal.add_cascade(
             label="Atendimento",
             menu=menu_atendimento
@@ -136,6 +141,15 @@ class ErpApplication:
         janela = tk.Toplevel(self._root)
         self._janela_funcionario = janela
         Funcionario_View(janela, self._controller_funcionario)
+
+    def _abrir_equipamento(self):
+        if self._janela_equipamento is not None and self._janela_equipamento.winfo_exists():
+            self._janela_equipamento.lift()
+            self._janela_equipamento.focus_force()
+            return
+        janela = tk.Toplevel(self._root)
+        self._janela_equipamento = janela
+        Equipamento_View(janela, self._controller_servico)
 
     def run(self):
         self._root.mainloop()

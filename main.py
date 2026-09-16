@@ -31,6 +31,7 @@ class ErpApplication:
 
         self._janela_ordem_servico = None
         self._janela_cliente = None
+        self._janela_funcionario = None
 
         self._configurar_janela()
 

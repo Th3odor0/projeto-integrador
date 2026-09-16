@@ -3,199 +3,207 @@ from tkinter import ttk, messagebox
 
 
 class Funcionario_View(tk.Frame):
-    
-
-    CAMPOS_TEXTO = [
-        ("nome", "Nome:"),
-        ("cpf", "CPF:"),
-        ("cargo", "Cargo:"),
-    ]
-
     def __init__(self, master, funcionario_controller):
         super().__init__(master)
         self.master = master
-        self.controller = funcionario_controller
+        self.controller = funcionario_controller  # Controller que faz as validações com o banco
 
-        self.id_selecionado = None  # None = modo "novo cadastro"
-        self.entradas = {}          # chave -> Entry
+        self.master.title("Cadastro de Funcionários")
+        self._criar_widgets()
+        self._carregar_lista()
 
-        self.master.title("Cadastro de Funcionário")
+        # Sem isso, o Frame nunca aparece dentro da janela (Toplevel fica em branco)
+        self.pack(fill=tk.BOTH, expand=True)
 
-        self._linha_atual = 0
-        self._criar_campos_texto()
-        self._criar_treeview()
-        self._criar_botoes()
-        self.tbl_funcionarios.bind("<<TreeviewSelect>>", self._selecionar_funcionario)
+    def _criar_widgets(self):
+        """Monta os campos de entrada, os botões e a lista da tela."""
+        linha = 0
 
-        self._atualizar_treeview()
+        # --- Campo ID (somente leitura: preenchido pelo sistema, nunca digitado) ---
+        tk.Label(self, text="ID:").grid(row=linha, column=0, sticky="w", padx=5, pady=5)
+        self.entry_id = tk.Entry(self, width=40, state="readonly")
+        self.entry_id.grid(row=linha, column=1, padx=5, pady=5)
+        linha += 1
 
-        self.pack(fill="both", expand=True)
+        # --- Nome ---
+        tk.Label(self, text="Nome:").grid(row=linha, column=0, sticky="w", padx=5, pady=5)
+        self.entry_nome = tk.Entry(self, width=40)
+        self.entry_nome.grid(row=linha, column=1, padx=5, pady=5)
+        linha += 1
 
-    # ------------------------------------------------------------------
-    # Construção da interface
-    # ------------------------------------------------------------------
+        # --- CPF ---
+        tk.Label(self, text="CPF:").grid(row=linha, column=0, sticky="w", padx=5, pady=5)
+        self.entry_cpf = tk.Entry(self, width=40)
+        self.entry_cpf.grid(row=linha, column=1, padx=5, pady=5)
+        linha += 1
 
-    def _adicionar_linha(self, texto_label, widget):
-        tk.Label(self, text=texto_label).grid(row=self._linha_atual, column=0, sticky="w", padx=5, pady=5)
-        widget.grid(row=self._linha_atual, column=1, padx=5, pady=5)
-        self._linha_atual += 1
-        return widget
+        # --- Cargo ---
+        tk.Label(self, text="Cargo:").grid(row=linha, column=0, sticky="w", padx=5, pady=5)
+        self.entry_cargo = tk.Entry(self, width=40)
+        self.entry_cargo.grid(row=linha, column=1, padx=5, pady=5)
+        linha += 1
 
-    def _criar_campos_texto(self):
-        for chave, label in self.CAMPOS_TEXTO:
-            self.entradas[chave] = self._adicionar_linha(label, tk.Entry(self, width=40))
+        # --- Botões de ação, um do lado do outro na mesma linha ---
+        frame_botoes = tk.Frame(self)
+        frame_botoes.grid(row=linha, column=0, columnspan=2, pady=10)
+        linha += 1
 
-    def _criar_treeview(self):
-        # coluna -> (título, largura, alinhamento)
-        colunas_config = {
-            "id": ("ID", 40, "center"),
-            "nome": ("Nome", 160, "w"),
-            "cpf": ("CPF", 120, "center"),
-            "cargo": ("Cargo", 140, "w"),
-        }
+        tk.Button(frame_botoes, text="Salvar", command=self._salvar).pack(side="left", padx=5)
+        tk.Button(frame_botoes, text="Atualizar", command=self._atualizar).pack(side="left", padx=5)
+        tk.Button(frame_botoes, text="Deletar", command=self._deletar).pack(side="left", padx=5)
+        tk.Button(frame_botoes, text="Novo", command=self._limpar_campos).pack(side="left", padx=5)
 
-        self.tbl_funcionarios = ttk.Treeview(self, columns=tuple(colunas_config), show="headings", height=8)
-        self.tbl_funcionarios.grid(row=self._linha_atual, column=0, columnspan=2, padx=5, pady=10, sticky="nsew")
-        self._linha_atual += 1
+        # --- Lista de funcionários já cadastrados ---
+        frame_lista = tk.Frame(self)
+        frame_lista.grid(row=linha, column=0, columnspan=2, sticky="nsew", padx=10, pady=(0, 10))
 
-        for coluna, (titulo, largura, alinhamento) in colunas_config.items():
-            self.tbl_funcionarios.heading(coluna, text=titulo)
-            self.tbl_funcionarios.column(coluna, width=largura, anchor=alinhamento)
+        # Deixa a lista esticar quando a janela for redimensionada
+        self.grid_rowconfigure(linha, weight=1)
+        self.grid_columnconfigure(1, weight=1)
 
-    def _criar_botoes(self):
-        frame = tk.Frame(self)
-        frame.grid(row=self._linha_atual, column=0, columnspan=2, pady=10)
+        colunas = ("id", "nome", "cpf", "cargo")
+        self.tree = ttk.Treeview(frame_lista, columns=colunas, show="headings")
+        self.tree.heading("id", text="ID")
+        self.tree.heading("nome", text="Nome")
+        self.tree.heading("cpf", text="CPF")
+        self.tree.heading("cargo", text="Cargo")
 
-        botoes = [
-            ("Novo", self._novo),
-            ("Salvar", self._salvar),
-            ("Alterar", self._alterar),
-            ("Excluir", self._excluir),
-        ]
-        for coluna, (texto, comando) in enumerate(botoes):
-            tk.Button(frame, text=texto, width=15, command=comando).grid(row=0, column=coluna, padx=5)
+        self.tree.column("id", width=40)
+        self.tree.column("nome", width=220)
+        self.tree.column("cpf", width=130)
+        self.tree.column("cargo", width=180)
 
-    # ------------------------------------------------------------------
-    # Carregamento de dados
-    # ------------------------------------------------------------------
+        self.tree.pack(fill="both", expand=True, side="left")
 
-    def _atualizar_treeview(self):
-        """Busca os funcionários no controller e repopula a Treeview."""
-        self.tbl_funcionarios.delete(*self.tbl_funcionarios.get_children())
+        scrollbar = ttk.Scrollbar(frame_lista, orient="vertical", command=self.tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        self.tree.configure(yscrollcommand=scrollbar.set)
 
-        for funcionario in self.controller.listar_todos():
-            self.tbl_funcionarios.insert("", tk.END, values=(
-                funcionario.id,
-                funcionario.nome,
-                funcionario.cpf,
-                funcionario.cargo,
-            ))
+        self.tree.bind("<<TreeviewSelect>>", self._selecionar_funcionario)
 
-    # ------------------------------------------------------------------
-    # Helpers
-    # ------------------------------------------------------------------
+    def _carregar_lista(self):
+        """Atualiza a Treeview com os funcionários cadastrados, vindos do Controller."""
+        for item in self.tree.get_children():
+            self.tree.delete(item)
 
-    @staticmethod
-    def _exibir_mensagem(titulo, mensagem, sucesso=True):
-        (messagebox.showinfo if sucesso else messagebox.showerror)(titulo, mensagem)
-
-    # ------------------------------------------------------------------
-    # Ações da Treeview
-    # ------------------------------------------------------------------
-
-    def _selecionar_funcionario(self, event=None):
-        selecao = self.tbl_funcionarios.selection()
-        if not selecao:
+        sucesso, resultado = self.controller.buscar_todos()
+        if not sucesso:
+            messagebox.showerror("Erro", resultado)
             return
 
-        id_funcionario = self.tbl_funcionarios.item(selecao[0])["values"][0]
-        funcionario = self.controller.buscar_por_id(id_funcionario)
-        if funcionario is None:
-            self._exibir_mensagem("Erro", "Funcionário não encontrado.", sucesso=False)
+        for funcionario in resultado:
+            self.tree.insert(
+                "", "end",
+                values=(funcionario.id, funcionario.nome, funcionario.cpf, funcionario.cargo)
+            )
+
+    def _selecionar_funcionario(self, event):
+        """Ao clicar numa linha da lista, carrega os dados no formulário (inclusive o ID)."""
+        selecionado = self.tree.focus()
+        if not selecionado:
             return
 
-        self._preencher_campos(funcionario)
+        valores = self.tree.item(selecionado, "values")
+        if not valores:
+            return
 
-    def _preencher_campos(self, funcionario):
-        self.id_selecionado = funcionario.id
+        self._set_id(valores[0])
 
-        valores = {
-            "nome": funcionario.nome,
-            "cpf": funcionario.cpf,
-            "cargo": funcionario.cargo,
-        }
-        for chave, valor in valores.items():
-            self.entradas[chave].delete(0, tk.END)
-            self.entradas[chave].insert(0, "" if valor is None else str(valor))
+        self.entry_nome.delete(0, tk.END)
+        self.entry_nome.insert(0, valores[1])
 
-    def _limpar_campos(self):
-        self.id_selecionado = None
-        for entrada in self.entradas.values():
-            entrada.delete(0, tk.END)
+        self.entry_cpf.delete(0, tk.END)
+        self.entry_cpf.insert(0, valores[2])
 
-    def _coletar_dados_formulario(self):
-        nome = self.entradas["nome"].get().strip()
-        if not nome:
-            raise ValueError("O campo 'nome' é obrigatório.")
+        self.entry_cargo.delete(0, tk.END)
+        self.entry_cargo.insert(0, valores[3])
 
-        return {chave: self.entradas[chave].get() for chave, _ in self.CAMPOS_TEXTO}
-
-    # ------------------------------------------------------------------
-    # Ações dos botões (CRUD)
-    # ------------------------------------------------------------------
-
-    def _executar_operacao(self, chamada_controller, mensagem_sucesso):
+    def _set_id(self, valor):
         """
-        Executa uma chamada ao controller que retorna (sucesso, mensagem_ou_objeto).
-        Erros de validação levantados na coleta dos dados da própria view
-        (ex.: campo obrigatório vazio) também são tratados aqui.
+        Escreve (ou limpa) o campo ID mesmo ele estando readonly.
+        Usado pelo próprio sistema: depois de salvar (mostra o ID gerado pelo banco),
+        ao selecionar um funcionário na lista, ou ao limpar o formulário.
         """
+        self.entry_id.config(state="normal")
+        self.entry_id.delete(0, tk.END)
+        if valor is not None:
+            self.entry_id.insert(0, str(valor))
+        self.entry_id.config(state="readonly")
+
+    def _pegar_id(self):
+        """
+        Lê o campo de ID e valida se é um número.
+        Se estiver vazio ou inválido, já mostra o erro na tela e retorna None
+        (quem chamar essa função só precisa checar 'if id_funcionario is None: return').
+        """
+        id_texto = self.entry_id.get()
+        if not id_texto.strip():
+            messagebox.showerror("Erro", "Nenhum funcionário selecionado (ID vazio).")
+            return None
         try:
-            sucesso, resultado = chamada_controller()
-        except ValueError as erro:
-            self._exibir_mensagem("Erro de validação", str(erro), sucesso=False)
-            return
-        except Exception as erro:
-            self._exibir_mensagem("Erro inesperado", f"Ocorreu um erro: {erro}", sucesso=False)
-            return
-
-        if sucesso:
-            self._exibir_mensagem("Sucesso", mensagem_sucesso)
-            self._limpar_campos()
-            self._atualizar_treeview()
-        else:
-            self._exibir_mensagem("Erro", resultado, sucesso=False)
-
-    def _novo(self):
-        """Limpa o formulário para cadastrar um novo funcionário."""
-        self.tbl_funcionarios.selection_remove(self.tbl_funcionarios.selection())
-        self._limpar_campos()
+            return int(id_texto)
+        except ValueError:
+            messagebox.showerror("Erro", "O campo ID deve ser um número inteiro.")
+            return None
 
     def _salvar(self):
-        self._executar_operacao(
-            lambda: self.controller.cadastrar(**self._coletar_dados_formulario()),
-            "Funcionário cadastrado com sucesso!",
+        """Cadastra um funcionário novo. O ID nunca vem do usuário: é gerado pelo banco."""
+        sucesso, resultado = self.controller.cadastrar(
+            nome=self.entry_nome.get(),
+            cpf=self.entry_cpf.get(),
+            cargo=self.entry_cargo.get()
         )
 
-    def _alterar(self):
-        if self.id_selecionado is None:
-            self._exibir_mensagem("Aviso", "Selecione um funcionário na lista para alterar.", sucesso=False)
-            return
+        if sucesso:
+            novo_id = resultado.id  # 'resultado' é o objeto Funcionario; o ID gerado está em .id
+            messagebox.showinfo("Sucesso", f"Funcionário cadastrado com sucesso!")
+            self._limpar_campos()
+            self._carregar_lista()
+        else:
+            # 'resultado' aqui é a mensagem de erro vinda do Controller (validação ou CPF duplicado)
+            messagebox.showerror("Erro", resultado)
 
-        self._executar_operacao(
-            lambda: self.controller.atualizar(self.id_selecionado, **self._coletar_dados_formulario()),
-            "Funcionário alterado com sucesso!",
+    def _atualizar(self):
+        """Atualiza o funcionário do ID informado com os dados atuais dos campos."""
+        id_funcionario = self._pegar_id()
+        if id_funcionario is None:
+            return  # _pegar_id já mostrou o erro, só interrompe aqui
+
+        sucesso, resultado = self.controller.atualizar(
+            id=id_funcionario,
+            nome=self.entry_nome.get(),
+            cpf=self.entry_cpf.get(),
+            cargo=self.entry_cargo.get()
         )
 
-    def _excluir(self):
-        if self.id_selecionado is None:
-            self._exibir_mensagem("Aviso", "Selecione um funcionário na lista para excluir.", sucesso=False)
+        if sucesso:
+            messagebox.showinfo("Sucesso", resultado)
+            self._limpar_campos()
+            self._carregar_lista()
+        else:
+            messagebox.showerror("Erro", resultado)
+
+    def _deletar(self):
+        """Exclui o funcionário do ID informado, pedindo confirmação antes."""
+        id_funcionario = self._pegar_id()
+        if id_funcionario is None:
             return
 
-        if not messagebox.askyesno("Confirmação", "Deseja realmente excluir este funcionário?"):
+        confirmar = messagebox.askyesno("Confirmar", "Tem certeza que deseja excluir esse funcionário?")
+        if not confirmar:
             return
 
-        self._executar_operacao(
-            lambda: self.controller.excluir(self.id_selecionado),
-            "Funcionário excluído com sucesso!",
-        )
+        sucesso, resultado = self.controller.deletar(id_funcionario)
+        if sucesso:
+            messagebox.showinfo("Sucesso", resultado)
+            self._limpar_campos()
+            self._carregar_lista()
+        else:
+            messagebox.showerror("Erro", resultado)
+
+    def _limpar_campos(self):
+        """Limpa todos os campos, incluindo o ID (usado pelo botão 'Novo')."""
+        self._set_id(None)
+        self.entry_nome.delete(0, tk.END)
+        self.entry_cpf.delete(0, tk.END)
+        self.entry_cargo.delete(0, tk.END)

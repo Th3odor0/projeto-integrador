@@ -198,7 +198,12 @@ class ErpApplication:
             return
         janela = tk.Toplevel(self._root)
         self._janela_servico_servico = janela
-        Ordem_servico_Servico_View(janela, self._controller_servico_servico)
+        Ordem_servico_Servico_View(
+        janela, 
+        self._controller_servico_servico,
+        self._dao_servico,
+        self._dao_ordem_servico
+    )
 
     def run(self):
         self._root.mainloop()

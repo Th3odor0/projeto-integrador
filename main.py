@@ -9,6 +9,7 @@ from app.dao.ordem_servico_dao import Ordem_servico_DAO
 from app.dao.ordem_servico_pecas_dao import Ordem_Servico_Peca_DAO
 from app.dao.peca_dao import PecaDAO
 from app.dao.servico_dao import ServicoDAO
+from app.dao.ordem_servico_servico_dao import Ordem_servico_Servico_Dao
 # Controller
 from app.controller.ordem_servico_controller import Ordem_servico_Controller
 from app.controller.cliente_controller import ClienteController
@@ -16,6 +17,7 @@ from app.controller.funcionario_controller import FuncionarioController
 from app.controller.peca_controller import PecaController
 from app.controller.servico_controller import ServicoController
 from app.controller.equipamento_controller import EquipamentoController
+from app.controller.ordem_servico_servico_controller import Ordem_servico_Servico_Controller
 # View
 from app.view.ordem_servico_view import Ordem_servico_View
 from app.view.cliente_view import Cliente_view
@@ -37,6 +39,7 @@ class ErpApplication:
         self._janela_equipamento = None
         self._janela_servico = None
         self._janela_peca = None
+        self._janela_servico_servico = None
 
         self._configurar_janela()
 
@@ -46,6 +49,7 @@ class ErpApplication:
         self._dao_equipamento = EquipamentoDAO(self._database, self._dao_cliente)
         self._dao_peca = PecaDAO(self._database)
         self._dao_servico = ServicoDAO(self._database)
+        self._dao_servico_servico = Ordem_servico_Servico_Dao(self._database)
     
 
         # 2. Injeta as dependências na DAO principal
@@ -68,6 +72,7 @@ class ErpApplication:
         self._controller_peca = PecaController(self._dao_peca)
         self._controller_servico = ServicoController(self._dao_servico)
         self._controller_equipamento = EquipamentoController(self._dao_equipamento, self._dao_cliente)
+        self._controller_servico_servico = Ordem_servico_Servico_Controller(self._dao_servico_servico, self._dao_servico, self._dao_ordem_servico)
         self._criar_menu()
 
     def _configurar_janela(self):
@@ -102,6 +107,10 @@ class ErpApplication:
         menu_atendimento.add_command(
             label="Peças",
             command=self._abrir_peca
+        )
+        menu_atendimento.add_command(
+            label="Serviços Prestados",
+            command=self._abrir_servico_servico
         )
         menu_principal.add_cascade(
             label="Atendimento",
@@ -181,6 +190,15 @@ class ErpApplication:
         janela = tk.Toplevel(self._root)
         self._janela_peca = janela
         Peca_View(janela, self._controller_peca)
+
+    def _abrir_servico_servico(self):
+        if self._janela_servico_servico is not None and self._janela_servico_servico.winfo_exists():
+            self._janela_servico_servico.lift()
+            self._janela_servico_servico.focus_force()
+            return
+        janela = tk.Toplevel(self._root)
+        self._janela_servico_servico = janela
+        Ordem_servico_Servico_View(janela, self._controller_servico_servico)
 
     def run(self):
         self._root.mainloop()

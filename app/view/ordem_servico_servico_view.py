@@ -18,6 +18,9 @@ class Ordem_servico_Servico_View(tk.Frame):
         self._carregar_combo_servicos()
         self._atualizar_lista()
 
+        # Sem isso, o Frame nunca aparece dentro do Toplevel (janela fica em branco)
+        self.pack(fill="both", expand=True)
+
     # ---------- construção da tela ----------
 
     def _criar_widgets(self):
@@ -107,7 +110,13 @@ class Ordem_servico_Servico_View(tk.Frame):
             return
 
         item_id = int(selecionado[0])
-        self.controller.remover(item_id)
+
+        try:
+            self.controller.remover(item_id)
+        except ValueError as erro:
+            messagebox.showerror("Erro", str(erro))
+            return
+
         self._atualizar_lista()
 
     def _limpar_formulario(self):

@@ -1,9 +1,11 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 
+from app.view.ordem_servico_servico_view import Ordem_servico_Servico_View
+
 
 class Ordem_servico_View(tk.Frame):
-   
+
     STATUS_OPCOES = ["aberta", "em andamento", "concluida", "cancelada"]
 
     # (chave usada internamente == nome do kwarg passado ao controller, label exibido)
@@ -24,17 +26,21 @@ class Ordem_servico_View(tk.Frame):
     # Campos travados durante a edição, porque o controller não permite mudá-los
     CAMPOS_IMUTAVEIS_NA_EDICAO = ["cliente", "funcionario", "equipamento"]
 
-    def __init__(self, master, ordem_servico_controller, cliente_dao, funcionario_dao, equipamento_dao):
+    def __init__(self, master, ordem_servico_controller, cliente_dao, funcionario_dao,
+                 equipamento_dao, controller_servico_servico, servico_dao):
         super().__init__(master)
         self.master = master
         self.controller = ordem_servico_controller
         self.cliente_dao = cliente_dao
         self.funcionario_dao = funcionario_dao
         self.equipamento_dao = equipamento_dao
+        self.controller_servico_servico = controller_servico_servico
+        self.dao_servico = servico_dao
 
         self.id_selecionado = None  # None = modo "novo cadastro"
         self.combos = {}            # chave -> Combobox
         self.entradas = {}          # chave -> Entry
+        self._janela_servicos = None  # controla se a sub-tela de serviços já está aberta
 
         self.master.title("Cadastro de Ordem de Serviço")
 
@@ -109,6 +115,7 @@ class Ordem_servico_View(tk.Frame):
             ("Salvar", self._salvar),
             ("Alterar", self._alterar),
             ("Excluir", self._excluir),
+            ("Serviços", self._abrir_servicos),
         ]
         for coluna, (texto, comando) in enumerate(botoes):
             tk.Button(frame, text=texto, width=15, command=comando).grid(row=0, column=coluna, padx=5)
@@ -292,4 +299,30 @@ class Ordem_servico_View(tk.Frame):
         self._executar_operacao(
             lambda: self.controller.excluir(self.id_selecionado),
             "Ordem de serviço excluída com sucesso!",
+        )
+
+    # ------------------------------------------------------------------
+    # Sub-tela de Serviços Prestados
+    # ------------------------------------------------------------------
+
+    def _abrir_servicos(self):
+        """Abre a tela de serviços prestados vinculada à ordem selecionada na lista."""
+        if self.id_selecionado is None:
+            self._exibir_mensagem(
+                "Aviso", "Selecione uma ordem na lista para gerenciar os serviços.", sucesso=False
+            )
+            return
+
+        if self._janela_servicos is not None and self._janela_servicos.winfo_exists():
+            self._janela_servicos.lift()
+            self._janela_servicos.focus_force()
+            return
+
+        janela = tk.Toplevel(self)
+        self._janela_servicos = janela
+        Ordem_servico_Servico_View(
+            janela,
+            self.id_selecionado,
+            self.controller_servico_servico,
+            self.dao_servico
         )

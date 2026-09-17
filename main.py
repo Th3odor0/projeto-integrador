@@ -24,7 +24,6 @@ from app.view.cliente_view import Cliente_view
 from app.view.equipamento_view import Equipamento_View
 from app.view.funcionario_view import Funcionario_View
 from app.view.ordem_servico_pecas_view import Ordem_servico_Peca_View
-from app.view.ordem_servico_servico_view import Ordem_servico_Servico_View
 from app.view.servico_view import Servico_View
 from app.view.peca_view import Peca_View
 class ErpApplication:
@@ -39,7 +38,6 @@ class ErpApplication:
         self._janela_equipamento = None
         self._janela_servico = None
         self._janela_peca = None
-        self._janela_servico_servico = None
 
         self._configurar_janela()
 
@@ -108,10 +106,6 @@ class ErpApplication:
             label="Peças",
             command=self._abrir_peca
         )
-        menu_atendimento.add_command(
-            label="Serviços Prestados",
-            command=self._abrir_servico_servico
-        )
         menu_principal.add_cascade(
             label="Atendimento",
             menu=menu_atendimento
@@ -139,7 +133,9 @@ class ErpApplication:
             self._controller_ordem_servico,
             self._dao_cliente,
             self._dao_funcionario,
-            self._dao_equipamento
+            self._dao_equipamento,
+            self._controller_servico_servico,
+            self._dao_servico
         )
     
     def _abrir_cliente(self):
@@ -190,20 +186,6 @@ class ErpApplication:
         janela = tk.Toplevel(self._root)
         self._janela_peca = janela
         Peca_View(janela, self._controller_peca)
-
-    def _abrir_servico_servico(self):
-        if self._janela_servico_servico is not None and self._janela_servico_servico.winfo_exists():
-            self._janela_servico_servico.lift()
-            self._janela_servico_servico.focus_force()
-            return
-        janela = tk.Toplevel(self._root)
-        self._janela_servico_servico = janela
-        Ordem_servico_Servico_View(
-        janela, 
-        self._controller_servico_servico,
-        self._dao_servico,
-        self._dao_ordem_servico
-    )
 
     def run(self):
         self._root.mainloop()

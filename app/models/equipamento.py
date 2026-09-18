@@ -1,11 +1,11 @@
 class Equipamento:
-    def __init__(self, id, tipo, marca, modelo, numero_serie, id_cliente=None):
+    def __init__(self, id, tipo, marca, modelo, numero_serie, cliente_id=None):
         self._id = id
         self._tipo = tipo
         self._marca = marca
         self._modelo = modelo
         self._numero_serie = numero_serie
-        self._id_cliente = id_cliente
+        self._id_cliente = cliente_id
 
     def atualizar_dados(self, novo_tipo, nova_marca, novo_modelo, novo_numero_serie):
         self._tipo = novo_tipo

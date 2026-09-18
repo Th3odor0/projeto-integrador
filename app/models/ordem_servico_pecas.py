@@ -1,13 +1,9 @@
 from app.models.ordem_servico import Ordem_servico
 from app.models.pecas import Peca
 
+
 class Ordem_servico_peca:
-    def __init__(self,
-                 id,
-                 quantidade,
-                 valor_unitario,
-                 id_ordem_servico=Ordem_servico,
-                 id_peca=Peca):
+    def __init__(self, id, quantidade, valor_unitario, id_ordem_servico=None, id_peca=None):
         self._id = id
         self._quantidade = quantidade
         self._valor_unitario = valor_unitario
@@ -15,16 +11,25 @@ class Ordem_servico_peca:
         self._id_peca = id_peca
 
     def atualizar_dados(self, nova_quantidade, novo_valor):
-        self._quantidade = nova_quantidade 
+        self._quantidade = nova_quantidade
         self._valor_unitario = novo_valor
 
     @property
     def id(self):
         return self._id
+
+    @property
+    def quantidade(self):
+        return self._quantidade
+
+    @property
+    def valor_unitario(self):
+        return self._valor_unitario
+
     @property
     def id_ordem_servico(self):
         return self._id_ordem_servico
+
     @property
     def id_peca(self):
         return self._id_peca
-    

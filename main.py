@@ -25,6 +25,7 @@ from app.view.ordem_servico_view import Ordem_servico_View
 from app.view.cliente_view import Cliente_view
 from app.view.equipamento_view import Equipamento_View
 from app.view.funcionario_view import Funcionario_View
+
 from app.view.servico_view import Servico_View
 from app.view.peca_view import Peca_View
 
@@ -113,7 +114,6 @@ class ErpApplication:
             label="Peças",
             command=self._abrir_peca
         )
-        
         menu_principal.add_cascade(
             label="Atendimento",
             menu=menu_atendimento
@@ -143,8 +143,8 @@ class ErpApplication:
             self._dao_cliente,
             self._dao_funcionario,
             self._dao_equipamento,
-            self._dao_servico,
-            self._dao_peca
+            self._controller_servico_servico,
+            self._dao_servico
         )
 
     def _abrir_cliente(self):

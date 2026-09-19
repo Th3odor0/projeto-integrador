@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 
+from app.core.dataUltils import DataUtils
+
 
 class Ordem_servico_View(tk.Frame):
     """
@@ -32,6 +34,10 @@ class Ordem_servico_View(tk.Frame):
               'itens' é [{"peca_id", "quantidade", "valor_unitario"}, ...] — SUBSTITUI
               tudo de uma vez, por isso a aba trabalha com uma lista em memória e só
               persiste ao clicar em "Salvar peças da ordem".
+
+    IMPORTANTE (datas): tudo que entra ou sai dos campos de texto passa por
+    DataUtils. O banco devolve objetos date, e str(date) produz "aaaa-mm-dd",
+    formato que o controller rejeita. Nunca use str() direto numa data aqui.
     """
 
     STATUS_OPCOES = ["aberta", "em andamento", "concluida", "cancelada"]
@@ -74,42 +80,31 @@ class Ordem_servico_View(tk.Frame):
 
         self.master.title("Ordem de Serviço")
 
-        # --- DIAGNÓSTICO TEMPORÁRIO ---
-        # Envolve toda a montagem da tela em try/except pra mostrar o traceback
-        # real num popup, em vez de deixar a janela em branco sem explicação.
-        # Depois que o bug for identificado e corrigido, pode remover o
-        # try/except e desfazer a indentação, voltando ao fluxo original.
-        try:
-            self.notebook = ttk.Notebook(self)
-            self.aba_dados = ttk.Frame(self.notebook)
-            self.aba_servicos = ttk.Frame(self.notebook)
-            self.aba_pecas = ttk.Frame(self.notebook)
-            self.notebook.add(self.aba_dados, text="Dados da Ordem")
-            self.notebook.add(self.aba_servicos, text="Serviços Prestados")
-            self.notebook.add(self.aba_pecas, text="Peças Utilizadas")
-            self.notebook.pack(fill="both", expand=True)
+        self.notebook = ttk.Notebook(self)
+        self.aba_dados = ttk.Frame(self.notebook)
+        self.aba_servicos = ttk.Frame(self.notebook)
+        self.aba_pecas = ttk.Frame(self.notebook)
+        self.notebook.add(self.aba_dados, text="Dados da Ordem")
+        self.notebook.add(self.aba_servicos, text="Serviços Prestados")
+        self.notebook.add(self.aba_pecas, text="Peças Utilizadas")
+        self.notebook.pack(fill="both", expand=True)
 
-            self._linha_atual = 0
-            self._criar_combos()
-            self._criar_campos_texto()
-            self._criar_treeview()
-            self._criar_botoes()
-            self.tbl_ordens.bind("<<TreeviewSelect>>", self._selecionar_ordem)
+        self._linha_atual = 0
+        self._criar_combos()
+        self._criar_campos_texto()
+        self._criar_treeview()
+        self._criar_botoes()
+        self.tbl_ordens.bind("<<TreeviewSelect>>", self._selecionar_ordem)
 
-            self._criar_aba_servicos()
-            self._criar_aba_pecas()
+        self._criar_aba_servicos()
+        self._criar_aba_pecas()
 
-            self._carregar_combos()
-            self._atualizar_treeview()
-            self._carregar_combo_servico_aba()
-            self._atualizar_aba_servicos()
-            self._carregar_combo_peca_aba()
-            self._atualizar_aba_pecas()
-        except Exception:
-            import traceback
-            messagebox.showerror("Erro ao montar Ordem de Serviço", traceback.format_exc())
-            return
-        # --- FIM DO DIAGNÓSTICO TEMPORÁRIO ---
+        self._carregar_combos()
+        self._atualizar_treeview()
+        self._carregar_combo_servico_aba()
+        self._atualizar_aba_servicos()
+        self._carregar_combo_peca_aba()
+        self._atualizar_aba_pecas()
 
         # Sem isso, o Frame nunca aparece dentro do Toplevel (janela fica em branco)
         self.pack(fill="both", expand=True)
@@ -194,7 +189,7 @@ class Ordem_servico_View(tk.Frame):
                 ordem.cliente.nome,
                 f"{ordem.equipamento.tipo} {ordem.equipamento.marca} {ordem.equipamento.modelo}",
                 ordem.status,
-                ordem.data_entrada,
+                DataUtils.data_para_string(ordem.data_entrada),   # dd/mm/aaaa, nunca o ISO do banco
             ))
 
     # ------------------------------------------------------------------
@@ -213,6 +208,14 @@ class Ordem_servico_View(tk.Frame):
     @staticmethod
     def _exibir_mensagem(titulo, mensagem, sucesso=True):
         (messagebox.showinfo if sucesso else messagebox.showerror)(titulo, mensagem)
+
+    @staticmethod
+    def _formatar_valor(valor):
+        """Formata o valor total para exibição; se não for numérico, devolve o texto cru."""
+        try:
+            return f"{float(valor):.2f}"
+        except (TypeError, ValueError):
+            return "" if valor is None else str(valor)
 
     # ------------------------------------------------------------------
     # Aba "Dados da Ordem" — seleção na Treeview
@@ -235,17 +238,22 @@ class Ordem_servico_View(tk.Frame):
     def _preencher_campos(self, ordem):
         self.id_selecionado = ordem.id
 
+        # Destrava ANTES de escrever: um Entry com state="disabled" recusa
+        # delete/insert e derruba a tela ao selecionar a segunda ordem.
+        self._travar_campos_imutaveis(False)
+
         self._selecionar_valor_combo(self.combos["cliente"], ordem.cliente.id)
         self._selecionar_valor_combo(self.combos["funcionario"], ordem.funcionario.id)
         self._selecionar_valor_combo(self.combos["equipamento"], ordem.equipamento.id)
         self.combos["status"].set(ordem.status)
 
         valores = {
-            "data_entrada_texto": ordem.data_entrada,
-            "data_conclusao_texto": ordem.data_conclusao,
+            # As datas vêm do banco como objetos date — converter para dd/mm/aaaa
+            "data_entrada_texto": DataUtils.data_para_string(ordem.data_entrada),
+            "data_conclusao_texto": DataUtils.data_para_string(ordem.data_conclusao),
             "problema": ordem.problema,
             "diagnostico": ordem.diagnostico,
-            "valor_total": ordem.valor_total,
+            "valor_total": self._formatar_valor(ordem.valor_total),
             "forma_pagamento": ordem.forma_pagamento,
             "dias_garantia": ordem.dias_garantia,
         }
@@ -287,7 +295,7 @@ class Ordem_servico_View(tk.Frame):
         if id_cliente is None or id_funcionario is None or id_equipamento is None:
             raise ValueError("Selecione cliente, funcionário e equipamento.")
 
-        dados = {chave: self.entradas[chave].get() for chave, _ in self.CAMPOS_TEXTO}
+        dados = {chave: self.entradas[chave].get().strip() for chave, _ in self.CAMPOS_TEXTO}
         dados.update(
             id_cliente=id_cliente,
             id_funcionario=id_funcionario,
@@ -297,7 +305,7 @@ class Ordem_servico_View(tk.Frame):
         return dados
 
     def _coletar_dados_atualizacao(self):
-        dados = {chave: self.entradas[chave].get() for chave in self.CAMPOS_ATUALIZAVEIS}
+        dados = {chave: self.entradas[chave].get().strip() for chave in self.CAMPOS_ATUALIZAVEIS}
         dados["status"] = self.combos["status"].get()
         return dados
 
@@ -321,6 +329,15 @@ class Ordem_servico_View(tk.Frame):
         self._limpar_campos()
 
     def _salvar(self):
+        # Evita gravar uma ordem duplicada quando há uma já selecionada na lista
+        if self.id_selecionado is not None:
+            self._exibir_mensagem(
+                "Aviso",
+                'Há uma ordem selecionada. Use "Alterar" para editá-la ou "Novo" para começar um cadastro.',
+                sucesso=False,
+            )
+            return
+
         self._executar_operacao(
             lambda: self.controller.cadastrar(**self._coletar_dados_cadastro()),
             "Ordem de serviço cadastrada com sucesso!",
@@ -510,7 +527,9 @@ class Ordem_servico_View(tk.Frame):
         if not self.combo_servico_aba.get():
             return
         servico_id = int(self.combo_servico_aba.get().split(" - ")[0])
-        servico = next(s for s in self.servicos_disponiveis if s.id == servico_id)
+        servico = next((s for s in self.servicos_disponiveis if s.id == servico_id), None)
+        if servico is None:
+            return
 
         self.entry_valor_cobrado_aba.delete(0, tk.END)
         self.entry_valor_cobrado_aba.insert(0, f"{servico.valor_padrao:.2f}")
@@ -541,7 +560,12 @@ class Ordem_servico_View(tk.Frame):
         if self.id_selecionado is not None:
             self.combo_servico_aba.config(state="readonly")
         self.combo_servico_aba.set("")
+
+        # Um Entry desabilitado recusa delete(); habilita só o tempo da limpeza
+        estado_original = str(self.entry_valor_cobrado_aba["state"])
+        self.entry_valor_cobrado_aba.config(state="normal")
         self.entry_valor_cobrado_aba.delete(0, tk.END)
+        self.entry_valor_cobrado_aba.config(state=estado_original)
 
     def _adicionar_servico(self):
         if self.id_selecionado is None:
@@ -600,28 +624,29 @@ class Ordem_servico_View(tk.Frame):
     # ------------------------------------------------------------------
 
     def _carregar_combo_peca_aba(self):
-        if self.ordem_servico_peca_controller is None:
+        if self.ordem_servico_peca_controller is None or self.peca_dao is None:
             return
         self.pecas_disponiveis = self.peca_dao.get_all()
         self.combo_peca_aba["values"] = [f"{p.id} - {p.nome}" for p in self.pecas_disponiveis]
 
     def _atualizar_aba_pecas(self):
         """Recarrega a lista de trabalho de peças a partir do banco, descartando edições não salvas."""
-        if self.ordem_servico_peca_controller is None:
+        if self.ordem_servico_peca_controller is None or self.peca_dao is None:
             return
 
         habilitado = self.id_selecionado is not None
 
         self.combo_peca_aba.config(state="readonly" if habilitado else "disabled")
         estado = "normal" if habilitado else "disabled"
-        self.entry_quantidade_peca_aba.config(state=estado)
-        self.entry_valor_unitario_peca_aba.config(state=estado)
         self.btn_add_peca.config(state=estado)
         self.btn_remover_peca.config(state=estado)
         self.btn_salvar_pecas.config(state=estado)
 
         self._lista_pecas_local = {}
+        # Limpa os campos enquanto ainda estão habilitados, depois aplica o estado final
         self._limpar_form_peca()
+        self.entry_quantidade_peca_aba.config(state=estado)
+        self.entry_valor_unitario_peca_aba.config(state=estado)
 
         if not habilitado:
             self.lbl_ordem_pecas.config(
@@ -652,10 +677,13 @@ class Ordem_servico_View(tk.Frame):
         self.tbl_pecas.delete(*self.tbl_pecas.get_children())
         total = 0.0
         for peca_id, dados in self._lista_pecas_local.items():
-            subtotal = dados["quantidade"] * dados["valor_unitario"]
+            subtotal = float(dados["quantidade"]) * float(dados["valor_unitario"])
             total += subtotal
             self.tbl_pecas.insert("", tk.END, iid=str(peca_id), values=(
-                dados["nome"], dados["quantidade"], f"{dados['valor_unitario']:.2f}", f"{subtotal:.2f}"
+                dados["nome"],
+                dados["quantidade"],
+                f"{float(dados['valor_unitario']):.2f}",
+                f"{subtotal:.2f}",
             ))
         self.lbl_total_pecas.config(text=f"Total peças: R$ {total:.2f}")
 
@@ -667,7 +695,9 @@ class Ordem_servico_View(tk.Frame):
         if not self.combo_peca_aba.get():
             return
         peca_id = int(self.combo_peca_aba.get().split(" - ")[0])
-        peca = next(p for p in self.pecas_disponiveis if p.id == peca_id)
+        peca = next((p for p in self.pecas_disponiveis if p.id == peca_id), None)
+        if peca is None:
+            return
 
         self.entry_valor_unitario_peca_aba.delete(0, tk.END)
         self.entry_valor_unitario_peca_aba.insert(0, f"{peca.preco_venda:.2f}")
@@ -692,12 +722,15 @@ class Ordem_servico_View(tk.Frame):
         self.entry_quantidade_peca_aba.delete(0, tk.END)
         self.entry_quantidade_peca_aba.insert(0, str(dados["quantidade"]))
         self.entry_valor_unitario_peca_aba.delete(0, tk.END)
-        self.entry_valor_unitario_peca_aba.insert(0, f"{dados['valor_unitario']:.2f}")
+        self.entry_valor_unitario_peca_aba.insert(0, f"{float(dados['valor_unitario']):.2f}")
 
     def _limpar_form_peca(self):
         self.combo_peca_aba.set("")
-        self.entry_quantidade_peca_aba.delete(0, tk.END)
-        self.entry_valor_unitario_peca_aba.delete(0, tk.END)
+        for entrada in (self.entry_quantidade_peca_aba, self.entry_valor_unitario_peca_aba):
+            estado_original = str(entrada["state"])
+            entrada.config(state="normal")
+            entrada.delete(0, tk.END)
+            entrada.config(state=estado_original)
 
     def _adicionar_peca_na_lista(self):
         """Adiciona (ou atualiza, se a peça já estiver na lista) um item na lista de trabalho.
@@ -710,7 +743,10 @@ class Ordem_servico_View(tk.Frame):
             return
 
         peca_id = int(self.combo_peca_aba.get().split(" - ")[0])
-        peca = next(p for p in self.pecas_disponiveis if p.id == peca_id)
+        peca = next((p for p in self.pecas_disponiveis if p.id == peca_id), None)
+        if peca is None:
+            self._exibir_mensagem("Erro", "Peça não encontrada na lista de peças disponíveis.", sucesso=False)
+            return
 
         try:
             quantidade = int(self.entry_quantidade_peca_aba.get())

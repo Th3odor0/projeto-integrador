@@ -9,6 +9,53 @@ class Ordem_servico_Controller:
         self.funcionario_dao = funcionario_dao
         self.equipamento_dao = equipamento_dao
 
+    # ------------------------------------------------------------------
+    # Validações reaproveitadas por cadastrar() e atualizar()
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _validar_valor_total(valor_total):
+        try:
+            valor_total = float(valor_total)
+        except (TypeError, ValueError):
+            raise ValueError("Valor total precisa ser um número.")
+
+        if valor_total < 0:
+            raise ValueError("Valor total não pode ser negativo.")
+
+        return valor_total
+
+    @staticmethod
+    def _validar_dias_garantia(dias_garantia):
+        # Campo opcional: vazio vira 0
+        if dias_garantia is None or str(dias_garantia).strip() == "":
+            return 0
+
+        try:
+            dias_garantia = int(dias_garantia)
+        except (TypeError, ValueError):
+            raise ValueError("Dias de garantia precisa ser um número inteiro.")
+
+        if dias_garantia < 0:
+            raise ValueError("Dias de garantia não pode ser negativo.")
+
+        return dias_garantia
+
+    @staticmethod
+    def _validar_data_conclusao(data_conclusao_texto):
+        # Data de conclusão é opcional (OS ainda em andamento)
+        if not data_conclusao_texto:
+            return None
+
+        if not DataUtils.validar_data(data_conclusao_texto):
+            raise ValueError("Data de conclusão inválida. Use o formato dd/mm/aaaa.")
+
+        return DataUtils.string_para_data(data_conclusao_texto)
+
+    # ------------------------------------------------------------------
+    # Operações
+    # ------------------------------------------------------------------
+
     def cadastrar(self, id_cliente, id_funcionario, id_equipamento, data_entrada_texto,
                   data_conclusao_texto, status, problema, diagnostico,
                   valor_total, forma_pagamento, dias_garantia):
@@ -21,20 +68,23 @@ class Ordem_servico_Controller:
         if not problema or not problema.strip():
             raise ValueError("O campo 'problema' é obrigatório.")
 
+        if not data_entrada or not str(data_entrada_texto).strip():
+            raise ValueError("A data de entrada é obrigatória.")
+        
         if not DataUtils.validar_data(data_entrada_texto):
-            raise ValueError("Data de entrada inválida. Use o formato dd/mm/aaaa.")
+            raise ValueError(
+                f"Data de entrada inválida: {data_entrada_texto!r}. Use o formato dd/mm/aaaa."
+            )
 
-        # Data de conclusão pode ser opcional (OS ainda em andamento)
-        if data_conclusao_texto and not DataUtils.validar_data(data_conclusao_texto):
-            raise ValueError("Data de conclusão inválida. Use o formato dd/mm/aaaa.")
+        data_conclusao = self._validar_data_conclusao(data_conclusao_texto)
+        valor_total = self._validar_valor_total(valor_total)
+        dias_garantia = self._validar_dias_garantia(dias_garantia)
 
-        try:
-            valor_total = float(valor_total)
-        except (TypeError, ValueError):
-            raise ValueError("Valor total precisa ser um número.")
+        data_entrada = DataUtils.string_para_data(data_entrada_texto)
 
-        if valor_total < 0:
-            raise ValueError("Valor total não pode ser negativo.")
+        # Conclusão não pode ser anterior à entrada
+        if data_conclusao is not None and data_conclusao < data_entrada:
+            raise ValueError("Data de conclusão não pode ser anterior à data de entrada.")
 
         # --- Busca as entidades relacionadas (garante que existem) ---
         cliente = self.cliente_dao.get_by_id(id_cliente)
@@ -48,10 +98,6 @@ class Ordem_servico_Controller:
         equipamento = self.equipamento_dao.get_by_id(id_equipamento)
         if equipamento is None:
             raise ValueError(f"Equipamento com id {id_equipamento} não encontrado.")
-
-        # --- Converte datas de texto para date ---
-        data_entrada = DataUtils.string_para_data(data_entrada_texto)
-        data_conclusao = DataUtils.string_para_data(data_conclusao_texto)
 
         # --- Monta o objeto e delega ao DAO ---
         nova_ordem = Ordem_servico(
@@ -84,19 +130,20 @@ class Ordem_servico_Controller:
                   valor_total, forma_pagamento, dias_garantia):
         """
         Atualização parcial: busca a ordem existente, aplica os novos dados
-        e salva. Mantém cliente/funcionario/equipamento originais.
+        e salva. Mantém cliente/funcionario/equipamento e a data de entrada originais.
         """
         ordem = self.buscar_por_id(id)
 
-        if data_conclusao_texto and not DataUtils.validar_data(data_conclusao_texto):
-            raise ValueError("Data de conclusão inválida. Use o formato dd/mm/aaaa.")
+        if not problema or not problema.strip():
+            raise ValueError("O campo 'problema' é obrigatório.")
 
-        try:
-            valor_total = float(valor_total)
-        except (TypeError, ValueError):
-            raise ValueError("Valor total precisa ser um número.")
+        data_conclusao = self._validar_data_conclusao(data_conclusao_texto)
+        valor_total = self._validar_valor_total(valor_total)
+        dias_garantia = self._validar_dias_garantia(dias_garantia)
 
-        data_conclusao = DataUtils.string_para_data(data_conclusao_texto)
+        data_entrada = DataUtils.string_para_data(ordem.data_entrada)
+        if data_conclusao is not None and data_entrada is not None and data_conclusao < data_entrada:
+            raise ValueError("Data de conclusão não pode ser anterior à data de entrada.")
 
         ordem.atualizar_dados(
             nova_entrada=ordem.data_entrada,   # mantém a data original de entrada

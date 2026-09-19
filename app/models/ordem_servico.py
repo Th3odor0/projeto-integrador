@@ -1,4 +1,6 @@
 class Ordem_servico:
+    STATUS_PERMITIDOS = ["aberta", "em andamento", "concluida", "cancelada"]
+
     def __init__(self,
                  id,
                  data_entrada,
@@ -15,7 +17,6 @@ class Ordem_servico:
         self._id = id
         self._data_entrada = data_entrada
         self._data_conclusao = data_conclusao
-        self._status = status
         self._problema = problema
         self._diagnostico = diagnostico
         self._valor_total = valor_total
@@ -24,19 +25,23 @@ class Ordem_servico:
         self._cliente = cliente
         self._funcionario = funcionario
         self._equipamento = equipamento
+        # usa o setter para que o status já nasça validado
+        self.status = status
 
     def atualizar_dados(self,
-                         nova_entrada,
-                         nova_conclusao,
-                         novo_status,
-                         novo_problema,
-                         novo_diagnostico,
-                         novo_valor,
-                         novo_pagamento,
-                         nova_garantia):
+                        nova_entrada,
+                        nova_conclusao,
+                        novo_status,
+                        novo_problema,
+                        novo_diagnostico,
+                        novo_valor,
+                        novo_pagamento,
+                        nova_garantia):
+        # Valida o status PRIMEIRO: se for inválido, nenhum outro campo é alterado
+        self.status = novo_status
+
         self._data_entrada = nova_entrada
         self._data_conclusao = nova_conclusao
-        self._status = novo_status
         self._problema = novo_problema
         self._diagnostico = novo_diagnostico
         self._valor_total = novo_valor
@@ -46,6 +51,11 @@ class Ordem_servico:
     @property
     def id(self):
         return self._id
+
+    @id.setter
+    def id(self, novo_id):
+        # O DAO precisa gravar o id gerado pelo banco depois do INSERT
+        self._id = novo_id
 
     @property
     def cliente(self):
@@ -93,7 +103,6 @@ class Ordem_servico:
 
     @status.setter
     def status(self, novo_status):
-        permitidos = ["aberta", "em andamento", "concluida", "cancelada"]
-        if novo_status not in permitidos:
+        if novo_status not in self.STATUS_PERMITIDOS:
             raise ValueError(f"Status inválido: {novo_status}")
         self._status = novo_status

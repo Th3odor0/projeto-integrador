@@ -74,31 +74,42 @@ class Ordem_servico_View(tk.Frame):
 
         self.master.title("Ordem de Serviço")
 
-        self.notebook = ttk.Notebook(self)
-        self.aba_dados = ttk.Frame(self.notebook)
-        self.aba_servicos = ttk.Frame(self.notebook)
-        self.aba_pecas = ttk.Frame(self.notebook)
-        self.notebook.add(self.aba_dados, text="Dados da Ordem")
-        self.notebook.add(self.aba_servicos, text="Serviços Prestados")
-        self.notebook.add(self.aba_pecas, text="Peças Utilizadas")
-        self.notebook.pack(fill="both", expand=True)
+        # --- DIAGNÓSTICO TEMPORÁRIO ---
+        # Envolve toda a montagem da tela em try/except pra mostrar o traceback
+        # real num popup, em vez de deixar a janela em branco sem explicação.
+        # Depois que o bug for identificado e corrigido, pode remover o
+        # try/except e desfazer a indentação, voltando ao fluxo original.
+        try:
+            self.notebook = ttk.Notebook(self)
+            self.aba_dados = ttk.Frame(self.notebook)
+            self.aba_servicos = ttk.Frame(self.notebook)
+            self.aba_pecas = ttk.Frame(self.notebook)
+            self.notebook.add(self.aba_dados, text="Dados da Ordem")
+            self.notebook.add(self.aba_servicos, text="Serviços Prestados")
+            self.notebook.add(self.aba_pecas, text="Peças Utilizadas")
+            self.notebook.pack(fill="both", expand=True)
 
-        self._linha_atual = 0
-        self._criar_combos()
-        self._criar_campos_texto()
-        self._criar_treeview()
-        self._criar_botoes()
-        self.tbl_ordens.bind("<<TreeviewSelect>>", self._selecionar_ordem)
+            self._linha_atual = 0
+            self._criar_combos()
+            self._criar_campos_texto()
+            self._criar_treeview()
+            self._criar_botoes()
+            self.tbl_ordens.bind("<<TreeviewSelect>>", self._selecionar_ordem)
 
-        self._criar_aba_servicos()
-        self._criar_aba_pecas()
+            self._criar_aba_servicos()
+            self._criar_aba_pecas()
 
-        self._carregar_combos()
-        self._atualizar_treeview()
-        self._carregar_combo_servico_aba()
-        self._atualizar_aba_servicos()
-        self._carregar_combo_peca_aba()
-        self._atualizar_aba_pecas()
+            self._carregar_combos()
+            self._atualizar_treeview()
+            self._carregar_combo_servico_aba()
+            self._atualizar_aba_servicos()
+            self._carregar_combo_peca_aba()
+            self._atualizar_aba_pecas()
+        except Exception:
+            import traceback
+            messagebox.showerror("Erro ao montar Ordem de Serviço", traceback.format_exc())
+            return
+        # --- FIM DO DIAGNÓSTICO TEMPORÁRIO ---
 
         # Sem isso, o Frame nunca aparece dentro do Toplevel (janela fica em branco)
         self.pack(fill="both", expand=True)

@@ -34,14 +34,14 @@ class EquipamentoDAO(DAO):
                     equipamento.marca,
                     equipamento.modelo,
                     equipamento.numero_serie,
-                    equipamento.cliente_id
+                    equipamento.id_cliente
                 )
             )
-            
+
             conexao.commit()
             equipamento.id = cursor.lastrowid
             return equipamento
-        
+
         except Exception:
             conexao.rollback()
             raise
@@ -77,7 +77,7 @@ class EquipamentoDAO(DAO):
                         marca=registro[2],
                         modelo=registro[3],
                         numero_serie=registro[4],
-                        cliente=cliente
+                        cliente_id=cliente
                     )
                 )
             return equipamentos
@@ -110,7 +110,7 @@ class EquipamentoDAO(DAO):
                     marca=registro[2],
                     modelo=registro[3],
                     numero_serie=registro[4],
-                    cliente=cliente
+                    cliente_id=cliente
                 )
             return None
         finally:
@@ -137,7 +137,7 @@ class EquipamentoDAO(DAO):
                     equipamento.marca,
                     equipamento.modelo,
                     equipamento.numero_serie,
-                    equipamento.cliente_id,
+                    equipamento.id_cliente,
                     equipamento.id
                 )
             )

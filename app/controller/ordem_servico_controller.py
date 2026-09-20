@@ -68,9 +68,9 @@ class Ordem_servico_Controller:
         if not problema or not problema.strip():
             raise ValueError("O campo 'problema' é obrigatório.")
 
-        if not data_entrada or not str(data_entrada_texto).strip():
+        if not data_entrada_texto or not str(data_entrada_texto).strip():
             raise ValueError("A data de entrada é obrigatória.")
-        
+
         if not DataUtils.validar_data(data_entrada_texto):
             raise ValueError(
                 f"Data de entrada inválida: {data_entrada_texto!r}. Use o formato dd/mm/aaaa."

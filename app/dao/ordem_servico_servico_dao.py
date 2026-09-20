@@ -5,9 +5,10 @@ class Ordem_servico_Servico_Dao:
     """
     DAO para a tabela de junção entre Ordem de Serviço e Serviço.
 
-    Ajuste nome de tabela/colunas conforme o schema real do seu banco —
-    usei 'ordem_servico_servico' com as colunas (id, valor_cobrado,
-    id_servico, id_ordem_servico) como um palpite razoável baseado na model.
+    Tabela: ordem_servico_servicos (plural), colunas ordem_servico_id e
+    servico_id — conforme o diagrama do banco. Os atributos do model Python
+    continuam se chamando id_servico/id_ordem_servico; só o SQL usa os nomes
+    de coluna reais.
     """
 
     def __init__(self, conexao):
@@ -16,8 +17,8 @@ class Ordem_servico_Servico_Dao:
     def get_by_ordem_servico(self, ordem_servico_id):
         cursor = self.conexao.cursor()
         cursor.execute(
-            "SELECT id, valor_cobrado, id_servico, id_ordem_servico "
-            "FROM ordem_servico_servico WHERE id_ordem_servico = %s",
+            "SELECT id, valor_cobrado, servico_id, ordem_servico_id "
+            "FROM ordem_servico_servicos WHERE ordem_servico_id = %s",
             (ordem_servico_id,),
         )
         linhas = cursor.fetchall()
@@ -27,8 +28,8 @@ class Ordem_servico_Servico_Dao:
     def get_by_id(self, id):
         cursor = self.conexao.cursor()
         cursor.execute(
-            "SELECT id, valor_cobrado, id_servico, id_ordem_servico "
-            "FROM ordem_servico_servico WHERE id = %s",
+            "SELECT id, valor_cobrado, servico_id, ordem_servico_id "
+            "FROM ordem_servico_servicos WHERE id = %s",
             (id,),
         )
         linha = cursor.fetchone()
@@ -38,7 +39,7 @@ class Ordem_servico_Servico_Dao:
     def save(self, item):
         cursor = self.conexao.cursor()
         cursor.execute(
-            "INSERT INTO ordem_servico_servico (valor_cobrado, id_servico, id_ordem_servico) "
+            "INSERT INTO ordem_servico_servicos (valor_cobrado, servico_id, ordem_servico_id) "
             "VALUES (%s, %s, %s)",
             (item.valor_cobrado, item.id_servico, item.id_ordem_servico),
         )
@@ -50,7 +51,7 @@ class Ordem_servico_Servico_Dao:
     def update(self, item):
         cursor = self.conexao.cursor()
         cursor.execute(
-            "UPDATE ordem_servico_servico SET valor_cobrado = %s WHERE id = %s",
+            "UPDATE ordem_servico_servicos SET valor_cobrado = %s WHERE id = %s",
             (item.valor_cobrado, item.id),
         )
         self.conexao.commit()
@@ -60,7 +61,7 @@ class Ordem_servico_Servico_Dao:
 
     def delete(self, id):
         cursor = self.conexao.cursor()
-        cursor.execute("DELETE FROM ordem_servico_servico WHERE id = %s", (id,))
+        cursor.execute("DELETE FROM ordem_servico_servicos WHERE id = %s", (id,))
         self.conexao.commit()
         sucesso = cursor.rowcount > 0
         cursor.close()
@@ -68,5 +69,5 @@ class Ordem_servico_Servico_Dao:
 
     @staticmethod
     def _montar_objeto(linha):
-        id, valor_cobrado, id_servico, id_ordem_servico = linha
-        return Ordem_servico_servico(id, float(valor_cobrado), id_servico, id_ordem_servico)
+        id, valor_cobrado, servico_id, ordem_servico_id = linha
+        return Ordem_servico_servico(id, float(valor_cobrado), servico_id, ordem_servico_id)

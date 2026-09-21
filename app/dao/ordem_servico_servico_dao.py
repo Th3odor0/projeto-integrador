@@ -1,72 +1,119 @@
+from app.dao.dao import DAO
 from app.models.ordem_servico_servico import Ordem_servico_servico
 
 
-class Ordem_servico_Servico_Dao:
+class Ordem_servico_Servico_Dao(DAO):
     """
     DAO para a tabela de junção entre Ordem de Serviço e Serviço.
 
-    Ajuste nome de tabela/colunas conforme o schema real do seu banco —
-    usei 'ordem_servico_servico' com as colunas (id, valor_cobrado,
-    id_servico, id_ordem_servico) como um palpite razoável baseado na model.
+    ATENÇÃO: confira os nomes da tabela e das colunas com o schema real
+    do banco (ordem_servico_servico: id, valor_cobrado, id_servico,
+    id_ordem_servico).
     """
 
-    def __init__(self, conexao):
-        self.conexao = conexao
+    def __init__(self, database):
+        super().__init__(database)
+
+    def get_all(self):
+        conexao, cursor = self.conectar()
+        try:
+            sql = """
+                SELECT id, valor_cobrado, id_servico, id_ordem_servico
+                FROM ordem_servico_servicos
+            """
+            cursor.execute(sql)
+            linhas = cursor.fetchall()
+            return [self._montar_objeto(linha) for linha in linhas]
+        finally:
+            self.desconectar(cursor, conexao)
 
     def get_by_ordem_servico(self, ordem_servico_id):
-        cursor = self.conexao.cursor()
-        cursor.execute(
-            "SELECT id, valor_cobrado, id_servico, id_ordem_servico "
-            "FROM ordem_servico_servico WHERE id_ordem_servico = %s",
-            (ordem_servico_id,),
-        )
-        linhas = cursor.fetchall()
-        cursor.close()
-        return [self._montar_objeto(linha) for linha in linhas]
+        conexao, cursor = self.conectar()
+        try:
+            sql = """
+                SELECT id, valor_cobrado, id_servico, id_ordem_servico
+                FROM ordem_servico_servicos
+                WHERE id_ordem_servico = %s
+            """
+            cursor.execute(sql, (ordem_servico_id,))
+            linhas = cursor.fetchall()
+            return [self._montar_objeto(linha) for linha in linhas]
+        finally:
+            self.desconectar(cursor, conexao)
 
-    def get_by_id(self, id):
-        cursor = self.conexao.cursor()
-        cursor.execute(
-            "SELECT id, valor_cobrado, id_servico, id_ordem_servico "
-            "FROM ordem_servico_servico WHERE id = %s",
-            (id,),
-        )
-        linha = cursor.fetchone()
-        cursor.close()
-        return self._montar_objeto(linha) if linha else None
+    def get_by_id(self, item_id):
+        conexao, cursor = self.conectar()
+        try:
+            sql = """
+                SELECT id, valor_cobrado, id_servico, id_ordem_servico
+                FROM ordem_servico_servicos
+                WHERE id = %s
+            """
+            cursor.execute(sql, (item_id,))
+            linha = cursor.fetchone()
+            return self._montar_objeto(linha) if linha else None
+        finally:
+            self.desconectar(cursor, conexao)
 
     def save(self, item):
-        cursor = self.conexao.cursor()
-        cursor.execute(
-            "INSERT INTO ordem_servico_servico (valor_cobrado, id_servico, id_ordem_servico) "
-            "VALUES (%s, %s, %s)",
-            (item.valor_cobrado, item.id_servico, item.id_ordem_servico),
-        )
-        self.conexao.commit()
-        novo_id = cursor.lastrowid
-        cursor.close()
-        return Ordem_servico_servico(novo_id, item.valor_cobrado, item.id_servico, item.id_ordem_servico)
+        conexao, cursor = self.conectar()
+        try:
+            sql = """
+                INSERT INTO ordem_servico_servicos
+                (valor_cobrado, id_servico, id_ordem_servico)
+                VALUES (%s, %s, %s)
+            """
+            cursor.execute(
+                sql,
+                (item.valor_cobrado, item.id_servico, item.id_ordem_servico)
+            )
+            conexao.commit()
+            novo_id = cursor.lastrowid
+            return Ordem_servico_servico(
+                novo_id,
+                item.valor_cobrado,
+                item.id_servico,
+                item.id_ordem_servico
+            )
+        except Exception:
+            conexao.rollback()
+            raise
+        finally:
+            self.desconectar(cursor, conexao)
 
     def update(self, item):
-        cursor = self.conexao.cursor()
-        cursor.execute(
-            "UPDATE ordem_servico_servico SET valor_cobrado = %s WHERE id = %s",
-            (item.valor_cobrado, item.id),
-        )
-        self.conexao.commit()
-        sucesso = cursor.rowcount > 0
-        cursor.close()
-        return sucesso
+        conexao, cursor = self.conectar()
+        try:
+            sql = """
+                UPDATE ordem_servico_servicos
+                SET valor_cobrado = %s
+                WHERE id = %s
+            """
+            cursor.execute(sql, (item.valor_cobrado, item.id))
+            conexao.commit()
+            return cursor.rowcount > 0
+        except Exception:
+            conexao.rollback()
+            raise
+        finally:
+            self.desconectar(cursor, conexao)
 
-    def delete(self, id):
-        cursor = self.conexao.cursor()
-        cursor.execute("DELETE FROM ordem_servico_servico WHERE id = %s", (id,))
-        self.conexao.commit()
-        sucesso = cursor.rowcount > 0
-        cursor.close()
-        return sucesso
+    def delete(self, item_id):
+        conexao, cursor = self.conectar()
+        try:
+            sql = "DELETE FROM ordem_servico_servicos WHERE id = %s"
+            cursor.execute(sql, (item_id,))
+            conexao.commit()
+            return cursor.rowcount > 0
+        except Exception:
+            conexao.rollback()
+            raise
+        finally:
+            self.desconectar(cursor, conexao)
 
     @staticmethod
     def _montar_objeto(linha):
-        id, valor_cobrado, id_servico, id_ordem_servico = linha
-        return Ordem_servico_servico(id, float(valor_cobrado), id_servico, id_ordem_servico)
+        id_, valor_cobrado, id_servico, id_ordem_servico = linha
+        return Ordem_servico_servico(
+            id_, float(valor_cobrado), id_servico, id_ordem_servico
+        )

@@ -17,7 +17,6 @@ class Ordem_servico:
         self._id = id
         self._data_entrada = data_entrada
         self._data_conclusao = data_conclusao
-        self.status = status  # passa pela validação do setter
         self._problema = problema
         self._diagnostico = diagnostico
         self._valor_total = valor_total
@@ -26,6 +25,8 @@ class Ordem_servico:
         self._cliente = cliente
         self._funcionario = funcionario
         self._equipamento = equipamento
+        # usa o setter para que o status já nasça validado
+        self.status = status
 
     def atualizar_dados(self,
                         nova_entrada,
@@ -36,9 +37,11 @@ class Ordem_servico:
                         novo_valor,
                         novo_pagamento,
                         nova_garantia):
+        # Valida o status PRIMEIRO: se for inválido, nenhum outro campo é alterado
+        self.status = novo_status
+
         self._data_entrada = nova_entrada
         self._data_conclusao = nova_conclusao
-        self.status = novo_status  # passa pela validação do setter
         self._problema = novo_problema
         self._diagnostico = novo_diagnostico
         self._valor_total = novo_valor
@@ -51,6 +54,7 @@ class Ordem_servico:
 
     @id.setter
     def id(self, novo_id):
+        # O DAO precisa gravar o id gerado pelo banco depois do INSERT
         self._id = novo_id
 
     @property

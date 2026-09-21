@@ -53,12 +53,13 @@ class ErpApplication:
         self._dao_equipamento = EquipamentoDAO(self._database, self._dao_cliente)
         self._dao_peca = PecaDAO(self._database)
         self._dao_servico = ServicoDAO(self._database)
-        self._dao_servico_servico = Ordem_servico_Servico_Dao(self._database)
-        # NÃO SEI o construtor real de Ordem_Servico_Peca_DAO — só vi o nome dela
-        # nos seus imports, nunca o conteúdo. Estou assumindo que ela recebe só
-        # a conexão (igual Cliente_DAO/PecaDAO/ServicoDAO). Se o construtor real
-        # pedir outros parâmetros (ex.: peca_dao, pra montar os objetos Peca),
-        # ajuste esta linha.
+
+        # Ordem_servico_Servico_Dao recebe uma conexão já aberta (não o Database
+        # inteiro) — é um padrão proposital e diferente do resto das DAOs.
+        conexao_os_servico = self._database.conectar()
+        self._dao_servico_servico = Ordem_servico_Servico_Dao(conexao_os_servico)
+
+        # Ordem_Servico_Peca_DAO segue o padrão normal, recebendo 'database'.
         self._dao_ordem_servico_peca = Ordem_Servico_Peca_DAO(self._database)
 
         # 2. Injeta as dependências na DAO principal

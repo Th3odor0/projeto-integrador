@@ -1,56 +1,52 @@
 from datetime import datetime, date
 
+
 class DataUtils:
     # d = dia de 2 dígitos, m = mês de 2 dígitos, Y = ano de 4 dígitos
-    FORMATO_DATA = "%d/%m/%Y"
-
+    FORMATO_DATA = "%d/%m/%Y"                 # formato canônico, usado na exibição
+    FORMATOS_ACEITOS = ["%d/%m/%Y", "%d-%m-%Y", "%d.%m.%Y", "%d/%m/%y", "%Y-%m-%d"]
     # Recebe um texto (string) e converte para objeto date
     @staticmethod
     def string_para_data(data_texto):
         if not data_texto:
             return None
-        try:
-            return datetime.strptime(data_texto, DataUtils.FORMATO_DATA).date()
-        except (ValueError, TypeError):
-            return None
+        # Se já for um date/datetime, apenas normaliza para date
+        if isinstance(data_texto, datetime):
+            return data_texto.date()
+        if isinstance(data_texto, date):
+            return data_texto
+        texto = str(data_texto).strip()
+        for formato in DataUtils.FORMATOS_ACEITOS:
+            try:
+                return datetime.strptime(data_texto, DataUtils.FORMATO_DATA).date()
+            except (ValueError, TypeError):
+                return None
 
     # Recebe uma data e converte para texto (string)
     @staticmethod
     def data_para_string(data_objeto):
-        # Se for None, retorna uma string vazia
-        if data_objeto is None:
+        # None ou vazio viram string vazia
+        if data_objeto is None or data_objeto == "":
             return ""
+        # Se já veio como texto (ex.: driver que devolve a data em string), devolve como está
+        if isinstance(data_objeto, str):
+            return data_objeto
         return data_objeto.strftime(DataUtils.FORMATO_DATA)
 
     # Tentativa de converter texto para data, se der certo True, caso contrário False
     @staticmethod
     def validar_data(data_texto):
-        if not data_texto:
-            return False
-        try:
-            datetime.strptime(data_texto, DataUtils.FORMATO_DATA)
-            return True
-        except (ValueError, TypeError):
-            return False
+        return DataUtils.string_para_data(data_texto) is not None
+        
+        ##if not data_texto:
+            #return False
+        #if isinstance(data_texto, (date, datetime)):
+           # return True
+        #try:
+           # datetime.strptime(data_texto, DataUtils.FORMATO_DATA)
+            #return True
+        #except (ValueError, TypeError):
+          #  return False
 
-    @staticmethod
-    def calcular_idade(data_texto):
-        # Convertemos o texto recebido para um objeto date
-        data_inicio = DataUtils.string_para_data(data_texto)
 
-        # Se a data for inválida ou não informada, não dá pra calcular idade
-        if data_inicio is None:
-            raise ValueError("Data inválida ou não informada para cálculo de idade.")
-
-        hoje = date.today()
-
-        # Impede idade negativa caso a data seja no futuro
-        if data_inicio > hoje:
-            raise ValueError("Data não pode ser no futuro.")
-
-        idade = hoje.year - data_inicio.year
-        # Ajusta se a pessoa ainda não fez aniversário este ano
-        if (hoje.month, hoje.day) < (data_inicio.month, data_inicio.day):
-            idade -= 1
-
-        return idade
+    

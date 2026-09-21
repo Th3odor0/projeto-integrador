@@ -7,7 +7,8 @@ class Ordem_Servico_Peca_DAO:
         self._database = database
 
     def get_pecas_por_ordem_servico(self, ordem_servico):
-        conexao, cursor = self._database.conectar()
+        conexao = self._database.conectar()
+        cursor = conexao.cursor()
 
         try:
             sql = """
@@ -52,7 +53,8 @@ class Ordem_Servico_Peca_DAO:
             self._database.desconectar(cursor, conexao)
 
     def substituir_pecas_da_ordem_servico(self, ordem_servico, pecas):
-        conexao, cursor = self._database.conectar()
+        conexao = self._database.conectar()
+        cursor = conexao.cursor()
 
         try:
             cursor.execute(

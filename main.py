@@ -49,7 +49,6 @@ COR_SAIR_HOVER = "#c0392b"
 
 FONTE_MARCA = ("Segoe UI", 16, "bold")
 FONTE_TAGLINE = ("Segoe UI", 9)
-FONTE_NAV_SECAO = ("Segoe UI", 9, "bold")
 FONTE_NAV_ITEM = ("Segoe UI", 11)
 FONTE_TOPBAR_TITULO = ("Segoe UI", 11, "bold")
 FONTE_TOPBAR_DATA = ("Segoe UI", 10)
@@ -62,9 +61,9 @@ FONTE_TILE_DESCRICAO = ("Segoe UI", 11)
 MODULOS = [
     ("🧾", "Ordens de Serviço", "Abrir, acompanhar e concluir atendimentos", "_abrir_ordem_servico", "#2f6fed"),
     ("👤", "Clientes", "Cadastro e histórico de clientes", "_abrir_cliente", "#1f9d63"),
-    ("🧑‍🔧", "Funcionários", "Equipe técnica e administrativa", "_abrir_funcionario", "#7c5cff"),
-    ("🖥️", "Equipamentos", "Aparelhos recebidos para reparo", "_abrir_equipamento", "#e08e2b"),
-    ("🛠️", "Serviços", "Catálogo de serviços prestados pela oficina", "_abrir_servico", "#0f9b8e"),
+    ("👷", "Funcionários", "Equipe técnica e administrativa", "_abrir_funcionario", "#7c5cff"),
+    ("💻", "Equipamentos", "Aparelhos recebidos para reparo", "_abrir_equipamento", "#e08e2b"),
+    ("🔧", "Serviços", "Catálogo de serviços prestados pela oficina", "_abrir_servico", "#0f9b8e"),
     ("🔩", "Peças", "Estoque de peças utilizadas nos reparos", "_abrir_peca", "#d1495b"),
 ]
 
@@ -175,19 +174,9 @@ class ErpApplication:
             font=FONTE_TAGLINE,
         ).pack(anchor="w")
 
-        tk.Frame(sidebar, bg=COR_SIDEBAR_HOVER, height=1).pack(fill="x", padx=26, pady=(24, 18))
-
-        tk.Label(
-            sidebar,
-            text="MENU PRINCIPAL",
-            bg=COR_SIDEBAR,
-            fg=COR_SIDEBAR_TEXTO,
-            font=FONTE_NAV_SECAO,
-        ).pack(anchor="w", padx=26, pady=(0, 10))
-
-        for icone, titulo, _descricao, nome_metodo, _cor in MODULOS:
-            comando = getattr(self, nome_metodo)
-            self._criar_item_nav(sidebar, icone, titulo, comando)
+        # A navegação principal vive nos cartões do painel; a sidebar fica só
+        # com a marca e o "Sair", deixando o espaço em branco de propósito —
+        # é o padrão de apps corporativos mais enxutos (Stripe, Linear, Notion).
 
         # "Sair" fica ancorado embaixo da sidebar, mesmo com a janela maximizada
         rodape = tk.Frame(sidebar, bg=COR_SIDEBAR)
@@ -323,7 +312,7 @@ class ErpApplication:
 
         emblema = tk.Canvas(conteudo, width=68, height=68, bg=COR_CARTAO, highlightthickness=0)
         emblema.create_oval(2, 2, 66, 66, fill=self._clarear_cor(cor_destaque), outline="")
-        emblema.create_text(34, 34, text=icone, font=("Segoe UI Emoji", 30))
+        self._desenhar_icone_centralizado(emblema, icone, centro=34, tamanho_fonte=30)
         emblema.pack(anchor="w")
 
         rotulo_titulo = tk.Label(
@@ -351,6 +340,23 @@ class ErpApplication:
             widget.bind("<Button-1>", lambda event: comando())
 
         return tile
+
+    @staticmethod
+    def _desenhar_icone_centralizado(canvas, texto, centro, tamanho_fonte):
+        """
+        Desenha 'texto' (geralmente um emoji) num Canvas e o recentraliza usando
+        a caixa delimitadora real do que foi desenhado. Necessário porque emojis
+        têm espaçamento interno irregular na fonte, então o anchor="center" do
+        Tkinter sozinho não deixa o ícone visualmente no meio do círculo.
+        """
+        item = canvas.create_text(
+            centro, centro, text=texto, font=("Segoe UI Emoji", tamanho_fonte), anchor="center"
+        )
+        caixa = canvas.bbox(item)
+        if caixa:
+            x0, y0, x1, y1 = caixa
+            canvas.move(item, centro - (x0 + x1) / 2, centro - (y0 + y1) / 2)
+        return item
 
     @staticmethod
     def _clarear_cor(cor_hex, fator=0.82):

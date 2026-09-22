@@ -2,6 +2,12 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 from app.core.dataUltils import DataUtils
+from app.view.estilo_view import (
+    COR_FUNDO_JANELA, COR_TITULO, COR_SUBTITULO, CORES_MODULOS,
+    FONTE_LABEL, FONTE_LABEL_NEGRITO,
+    configurar_janela, criar_cabecalho, criar_botao, estilizar_entry,
+    estilizar_botao_tk, aplicar_tema_widgets,
+)
 
 
 class Ordem_servico_View(tk.Frame):
@@ -58,7 +64,7 @@ class Ordem_servico_View(tk.Frame):
     def __init__(self, master, ordem_servico_controller, cliente_dao, funcionario_dao, equipamento_dao,
                  ordem_servico_servico_controller, servico_dao,
                  ordem_servico_peca_controller=None, peca_dao=None):
-        super().__init__(master)
+        super().__init__(master, bg=COR_FUNDO_JANELA)
         self.master = master
         self.controller = ordem_servico_controller
         self.cliente_dao = cliente_dao
@@ -78,9 +84,18 @@ class Ordem_servico_View(tk.Frame):
         self.combos = {}
         self.entradas = {}
 
-        self.master.title("Ordem de Serviço")
+        configurar_janela(self.master, "Ordens de Serviço")
+        self._estilo_tabela = aplicar_tema_widgets()
 
-        self.notebook = ttk.Notebook(self)
+        criar_cabecalho(
+            self, "Ordens de Serviço", "Abrir, acompanhar e concluir atendimentos",
+            cor_destaque=CORES_MODULOS["ordem_servico"],
+        )
+
+        corpo = tk.Frame(self, bg=COR_FUNDO_JANELA)
+        corpo.pack(fill="both", expand=True, padx=30, pady=(0, 24))
+
+        self.notebook = ttk.Notebook(corpo)
         self.aba_dados = ttk.Frame(self.notebook)
         self.aba_servicos = ttk.Frame(self.notebook)
         self.aba_pecas = ttk.Frame(self.notebook)
@@ -114,8 +129,10 @@ class Ordem_servico_View(tk.Frame):
     # ------------------------------------------------------------------
 
     def _adicionar_linha(self, texto_label, widget):
-        tk.Label(self.aba_dados, text=texto_label).grid(row=self._linha_atual, column=0, sticky="w", padx=5, pady=5)
-        widget.grid(row=self._linha_atual, column=1, padx=5, pady=5)
+        tk.Label(
+            self.aba_dados, text=texto_label, bg=COR_FUNDO_JANELA, fg=COR_SUBTITULO, font=FONTE_LABEL
+        ).grid(row=self._linha_atual, column=0, sticky="w", padx=8, pady=8)
+        widget.grid(row=self._linha_atual, column=1, padx=8, pady=8, sticky="w")
         self._linha_atual += 1
         return widget
 
@@ -132,7 +149,9 @@ class Ordem_servico_View(tk.Frame):
 
     def _criar_campos_texto(self):
         for chave, label in self.CAMPOS_TEXTO:
-            self.entradas[chave] = self._adicionar_linha(label, tk.Entry(self.aba_dados, width=42))
+            entry = tk.Entry(self.aba_dados, width=42)
+            estilizar_entry(entry)
+            self.entradas[chave] = self._adicionar_linha(label, entry)
             if chave == "data_conclusao_texto":
                 self.combos["status"] = self._adicionar_linha(
                     "Status:", ttk.Combobox(self.aba_dados, state="readonly", width=40, values=self.STATUS_OPCOES)
@@ -148,8 +167,11 @@ class Ordem_servico_View(tk.Frame):
             "data_entrada": ("Entrada", 90, "center"),
         }
 
-        self.tbl_ordens = ttk.Treeview(self.aba_dados, columns=tuple(colunas_config), show="headings", height=8)
-        self.tbl_ordens.grid(row=self._linha_atual, column=0, columnspan=2, padx=5, pady=10, sticky="nsew")
+        self.tbl_ordens = ttk.Treeview(
+            self.aba_dados, columns=tuple(colunas_config), show="headings", height=8,
+            style=self._estilo_tabela,
+        )
+        self.tbl_ordens.grid(row=self._linha_atual, column=0, columnspan=2, padx=8, pady=14, sticky="nsew")
         self._linha_atual += 1
 
         for coluna, (titulo, largura, alinhamento) in colunas_config.items():
@@ -157,17 +179,17 @@ class Ordem_servico_View(tk.Frame):
             self.tbl_ordens.column(coluna, width=largura, anchor=alinhamento)
 
     def _criar_botoes(self):
-        frame = tk.Frame(self.aba_dados)
-        frame.grid(row=self._linha_atual, column=0, columnspan=2, pady=10)
+        frame = tk.Frame(self.aba_dados, bg=COR_FUNDO_JANELA)
+        frame.grid(row=self._linha_atual, column=0, columnspan=2, pady=14)
 
         botoes = [
-            ("Novo", self._novo),
-            ("Salvar", self._salvar),
-            ("Alterar", self._alterar),
-            ("Excluir", self._excluir),
+            ("Novo", self._novo, "primario"),
+            ("Salvar", self._salvar, "primario"),
+            ("Alterar", self._alterar, "primario"),
+            ("Excluir", self._excluir, "perigo"),
         ]
-        for coluna, (texto, comando) in enumerate(botoes):
-            tk.Button(frame, text=texto, width=15, command=comando).grid(row=0, column=coluna, padx=5)
+        for coluna, (texto, comando, estilo) in enumerate(botoes):
+            criar_botao(frame, texto, comando, estilo=estilo).grid(row=0, column=coluna, padx=6)
 
     # ------------------------------------------------------------------
     # Aba "Dados da Ordem" — carregamento de dados
@@ -371,41 +393,54 @@ class Ordem_servico_View(tk.Frame):
     # ------------------------------------------------------------------
 
     def _criar_aba_servicos(self):
-        self.lbl_ordem_servicos = tk.Label(self.aba_servicos, text="", anchor="w", justify="left")
-        self.lbl_ordem_servicos.pack(fill="x", padx=10, pady=(10, 5))
+        self.lbl_ordem_servicos = tk.Label(
+            self.aba_servicos, text="", anchor="w", justify="left",
+            bg=COR_FUNDO_JANELA, fg=COR_TITULO, font=FONTE_LABEL_NEGRITO,
+        )
+        self.lbl_ordem_servicos.pack(fill="x", padx=14, pady=(14, 8))
 
-        form = tk.Frame(self.aba_servicos)
-        form.pack(fill="x", padx=10, pady=5)
+        form = tk.Frame(self.aba_servicos, bg=COR_FUNDO_JANELA)
+        form.pack(fill="x", padx=14, pady=5)
 
-        tk.Label(form, text="Serviço:").grid(row=0, column=0, sticky="w")
+        tk.Label(form, text="Serviço:", bg=COR_FUNDO_JANELA, fg=COR_SUBTITULO, font=FONTE_LABEL).grid(
+            row=0, column=0, sticky="w", pady=4
+        )
         self.combo_servico_aba = ttk.Combobox(form, state="readonly", width=35)
-        self.combo_servico_aba.grid(row=0, column=1, padx=5)
+        self.combo_servico_aba.grid(row=0, column=1, padx=8, pady=4)
         self.combo_servico_aba.bind("<<ComboboxSelected>>", self._preencher_valor_padrao_servico)
 
-        tk.Label(form, text="Valor cobrado (R$):").grid(row=1, column=0, sticky="w")
+        tk.Label(form, text="Valor cobrado (R$):", bg=COR_FUNDO_JANELA, fg=COR_SUBTITULO, font=FONTE_LABEL).grid(
+            row=1, column=0, sticky="w", pady=4
+        )
         self.entry_valor_cobrado_aba = tk.Entry(form, width=12)
-        self.entry_valor_cobrado_aba.grid(row=1, column=1, sticky="w", padx=5)
+        estilizar_entry(self.entry_valor_cobrado_aba)
+        self.entry_valor_cobrado_aba.grid(row=1, column=1, sticky="w", padx=8, pady=4)
 
-        frame_botoes = tk.Frame(self.aba_servicos)
-        frame_botoes.pack(pady=5)
+        frame_botoes = tk.Frame(self.aba_servicos, bg=COR_FUNDO_JANELA)
+        frame_botoes.pack(pady=8)
         self.btn_add_servico = tk.Button(frame_botoes, text="Adicionar", width=14, command=self._adicionar_servico)
+        estilizar_botao_tk(self.btn_add_servico)
         self.btn_add_servico.pack(side="left", padx=5)
         self.btn_atualizar_servico = tk.Button(
             frame_botoes, text="Atualizar valor", width=14, command=self._atualizar_servico
         )
+        estilizar_botao_tk(self.btn_atualizar_servico)
         self.btn_atualizar_servico.pack(side="left", padx=5)
         self.btn_remover_servico = tk.Button(frame_botoes, text="Remover", width=14, command=self._remover_servico)
+        estilizar_botao_tk(self.btn_remover_servico, estilo="perigo")
         self.btn_remover_servico.pack(side="left", padx=5)
 
         colunas = ("id", "servico", "valor_cobrado")
-        self.tbl_servicos = ttk.Treeview(self.aba_servicos, columns=colunas, show="headings", height=8)
+        self.tbl_servicos = ttk.Treeview(
+            self.aba_servicos, columns=colunas, show="headings", height=8, style=self._estilo_tabela
+        )
         self.tbl_servicos.heading("id", text="ID")
         self.tbl_servicos.heading("servico", text="Serviço")
         self.tbl_servicos.heading("valor_cobrado", text="Valor Cobrado")
         self.tbl_servicos.column("id", width=40, anchor="center")
         self.tbl_servicos.column("servico", width=220)
         self.tbl_servicos.column("valor_cobrado", width=100, anchor="center")
-        self.tbl_servicos.pack(fill="both", expand=True, padx=10, pady=10)
+        self.tbl_servicos.pack(fill="both", expand=True, padx=14, pady=14)
         self.tbl_servicos.bind("<<TreeviewSelect>>", self._selecionar_servico_da_aba)
 
         self._id_servico_por_item = {}
@@ -415,42 +450,57 @@ class Ordem_servico_View(tk.Frame):
             tk.Label(
                 self.aba_pecas,
                 text="Gerenciamento de peças não conectado (controller/DAO não informados).",
-                justify="left",
+                justify="left", bg=COR_FUNDO_JANELA, fg=COR_SUBTITULO, font=FONTE_LABEL,
             ).pack(padx=15, pady=15, anchor="w")
             return
 
-        self.lbl_ordem_pecas = tk.Label(self.aba_pecas, text="", anchor="w", justify="left")
-        self.lbl_ordem_pecas.pack(fill="x", padx=10, pady=(10, 5))
+        self.lbl_ordem_pecas = tk.Label(
+            self.aba_pecas, text="", anchor="w", justify="left",
+            bg=COR_FUNDO_JANELA, fg=COR_TITULO, font=FONTE_LABEL_NEGRITO,
+        )
+        self.lbl_ordem_pecas.pack(fill="x", padx=14, pady=(14, 8))
 
-        form = tk.Frame(self.aba_pecas)
-        form.pack(fill="x", padx=10, pady=5)
+        form = tk.Frame(self.aba_pecas, bg=COR_FUNDO_JANELA)
+        form.pack(fill="x", padx=14, pady=5)
 
-        tk.Label(form, text="Peça:").grid(row=0, column=0, sticky="w")
+        tk.Label(form, text="Peça:", bg=COR_FUNDO_JANELA, fg=COR_SUBTITULO, font=FONTE_LABEL).grid(
+            row=0, column=0, sticky="w", pady=4
+        )
         self.combo_peca_aba = ttk.Combobox(form, state="readonly", width=35)
-        self.combo_peca_aba.grid(row=0, column=1, padx=5)
+        self.combo_peca_aba.grid(row=0, column=1, padx=8, pady=4)
         self.combo_peca_aba.bind("<<ComboboxSelected>>", self._preencher_valor_padrao_peca)
 
-        tk.Label(form, text="Quantidade:").grid(row=1, column=0, sticky="w")
+        tk.Label(form, text="Quantidade:", bg=COR_FUNDO_JANELA, fg=COR_SUBTITULO, font=FONTE_LABEL).grid(
+            row=1, column=0, sticky="w", pady=4
+        )
         self.entry_quantidade_peca_aba = tk.Entry(form, width=10)
-        self.entry_quantidade_peca_aba.grid(row=1, column=1, sticky="w", padx=5)
+        estilizar_entry(self.entry_quantidade_peca_aba)
+        self.entry_quantidade_peca_aba.grid(row=1, column=1, sticky="w", padx=8, pady=4)
 
-        tk.Label(form, text="Valor unitário (R$):").grid(row=2, column=0, sticky="w")
+        tk.Label(form, text="Valor unitário (R$):", bg=COR_FUNDO_JANELA, fg=COR_SUBTITULO, font=FONTE_LABEL).grid(
+            row=2, column=0, sticky="w", pady=4
+        )
         self.entry_valor_unitario_peca_aba = tk.Entry(form, width=12)
-        self.entry_valor_unitario_peca_aba.grid(row=2, column=1, sticky="w", padx=5)
+        estilizar_entry(self.entry_valor_unitario_peca_aba)
+        self.entry_valor_unitario_peca_aba.grid(row=2, column=1, sticky="w", padx=8, pady=4)
 
-        frame_botoes = tk.Frame(self.aba_pecas)
-        frame_botoes.pack(pady=5)
+        frame_botoes = tk.Frame(self.aba_pecas, bg=COR_FUNDO_JANELA)
+        frame_botoes.pack(pady=8)
         self.btn_add_peca = tk.Button(
             frame_botoes, text="Adicionar à lista", width=16, command=self._adicionar_peca_na_lista
         )
+        estilizar_botao_tk(self.btn_add_peca)
         self.btn_add_peca.pack(side="left", padx=5)
         self.btn_remover_peca = tk.Button(
             frame_botoes, text="Remover da lista", width=16, command=self._remover_peca_da_lista
         )
+        estilizar_botao_tk(self.btn_remover_peca, estilo="perigo")
         self.btn_remover_peca.pack(side="left", padx=5)
 
         colunas = ("peca", "quantidade", "valor_unitario", "subtotal")
-        self.tbl_pecas = ttk.Treeview(self.aba_pecas, columns=colunas, show="headings", height=7)
+        self.tbl_pecas = ttk.Treeview(
+            self.aba_pecas, columns=colunas, show="headings", height=7, style=self._estilo_tabela
+        )
         self.tbl_pecas.heading("peca", text="Peça")
         self.tbl_pecas.heading("quantidade", text="Qtd.")
         self.tbl_pecas.heading("valor_unitario", text="Valor unit.")
@@ -459,18 +509,22 @@ class Ordem_servico_View(tk.Frame):
         self.tbl_pecas.column("quantidade", width=60, anchor="center")
         self.tbl_pecas.column("valor_unitario", width=90, anchor="center")
         self.tbl_pecas.column("subtotal", width=90, anchor="center")
-        self.tbl_pecas.pack(fill="both", expand=True, padx=10, pady=10)
+        self.tbl_pecas.pack(fill="both", expand=True, padx=14, pady=14)
         self.tbl_pecas.bind("<<TreeviewSelect>>", self._selecionar_peca_da_aba)
 
-        frame_total = tk.Frame(self.aba_pecas)
-        frame_total.pack(fill="x", padx=10, pady=(0, 5))
-        self.lbl_total_pecas = tk.Label(frame_total, text="Total peças: R$ 0.00", anchor="e")
+        frame_total = tk.Frame(self.aba_pecas, bg=COR_FUNDO_JANELA)
+        frame_total.pack(fill="x", padx=14, pady=(0, 8))
+        self.lbl_total_pecas = tk.Label(
+            frame_total, text="Total peças: R$ 0.00", anchor="e",
+            bg=COR_FUNDO_JANELA, fg=COR_TITULO, font=FONTE_LABEL_NEGRITO,
+        )
         self.lbl_total_pecas.pack(side="right")
 
         self.btn_salvar_pecas = tk.Button(
             self.aba_pecas, text="Salvar peças da ordem", command=self._salvar_pecas
         )
-        self.btn_salvar_pecas.pack(pady=10)
+        estilizar_botao_tk(self.btn_salvar_pecas)
+        self.btn_salvar_pecas.pack(pady=12)
 
         # lista de trabalho em memória: peca_id -> {"nome", "quantidade", "valor_unitario"}
         # só vira persistência de fato quando "Salvar peças da ordem" é clicado

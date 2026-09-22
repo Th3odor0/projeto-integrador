@@ -1,4 +1,5 @@
 import tkinter as tk
+from datetime import datetime
 from app.core.database import Database
 
 # DAOs das entidades necessárias para Ordem de Serviço
@@ -31,25 +32,41 @@ from app.view.peca_view import Peca_View
 # a aba "Serviços Prestados" embutida na Ordem_servico_View. O import dela e
 # de Ordem_servico_Peca_View não são mais necessários aqui.
 
-# --- Paleta e fontes da tela inicial ---
-COR_FUNDO_JANELA = "#eef2f5"
+# --- Paleta corporativa: sidebar em azul-marinho + destaque dourado ---
+COR_SIDEBAR = "#101a2c"
+COR_SIDEBAR_HOVER = "#1c2a44"
+COR_SIDEBAR_TEXTO = "#a9b3c2"
+COR_SIDEBAR_TEXTO_ATIVO = "#ffffff"
+COR_ACCENT = "#c9a227"
+
+COR_FUNDO_CONTEUDO = "#f4f6f9"
 COR_CARTAO = "#ffffff"
-COR_BORDA_CARTAO = "#dfe6e9"
-COR_TITULO = "#1a252f"
-COR_SUBTITULO = "#7f8c8d"
+COR_BORDA_CARTAO = "#e3e8ee"
+COR_TITULO = "#101828"
+COR_SUBTITULO = "#667085"
 
-COR_BOTAO = "#2c3e50"
-COR_BOTAO_HOVER = "#3d566e"
-COR_BOTAO_TEXTO = "#ecf0f1"
-
-COR_SAIR = "#95a5a6"
 COR_SAIR_HOVER = "#c0392b"
 
-FONTE_TITULO = ("Segoe UI", 26, "bold")
-FONTE_SUBTITULO = ("Segoe UI", 11)
-FONTE_BOTAO = ("Segoe UI", 12, "bold")
-FONTE_MENU_ITEM = ("Segoe UI", 10)
-FONTE_SAIR = ("Segoe UI", 10)
+FONTE_MARCA = ("Segoe UI", 16, "bold")
+FONTE_TAGLINE = ("Segoe UI", 9)
+FONTE_NAV_SECAO = ("Segoe UI", 9, "bold")
+FONTE_NAV_ITEM = ("Segoe UI", 11)
+FONTE_TOPBAR_TITULO = ("Segoe UI", 11, "bold")
+FONTE_TOPBAR_DATA = ("Segoe UI", 10)
+FONTE_BEMVINDO = ("Segoe UI", 26, "bold")
+FONTE_SUBTITULO_BEMVINDO = ("Segoe UI", 11)
+FONTE_TILE_TITULO = ("Segoe UI", 16, "bold")
+FONTE_TILE_DESCRICAO = ("Segoe UI", 11)
+
+# Um destaque de cor por módulo, usado na faixa superior e no emblema do cartão
+MODULOS = [
+    ("🧾", "Ordens de Serviço", "Abrir, acompanhar e concluir atendimentos", "_abrir_ordem_servico", "#2f6fed"),
+    ("👤", "Clientes", "Cadastro e histórico de clientes", "_abrir_cliente", "#1f9d63"),
+    ("🧑‍🔧", "Funcionários", "Equipe técnica e administrativa", "_abrir_funcionario", "#7c5cff"),
+    ("🖥️", "Equipamentos", "Aparelhos recebidos para reparo", "_abrir_equipamento", "#e08e2b"),
+    ("🛠️", "Serviços", "Catálogo de serviços prestados pela oficina", "_abrir_servico", "#0f9b8e"),
+    ("🔩", "Peças", "Estoque de peças utilizadas nos reparos", "_abrir_peca", "#d1495b"),
+]
 
 
 class ErpApplication:
@@ -113,113 +130,237 @@ class ErpApplication:
     def _configurar_janela(self):
         self._root.title("Sistema ERP - Assistência Técnica")
         self._root.state("zoomed")
-        self._root.configure(bg=COR_FUNDO_JANELA)
+        self._root.configure(bg=COR_FUNDO_CONTEUDO)
 
     # ------------------------------------------------------------------
-    # Tela inicial: cartão centralizado com título, subtítulo e menu
+    # Tela inicial: sidebar de navegação + painel principal com módulos
     # ------------------------------------------------------------------
 
     def _criar_tela_inicial(self):
-        fundo = tk.Frame(self._root, bg=COR_FUNDO_JANELA)
-        fundo.pack(fill="both", expand=True)
+        container = tk.Frame(self._root, bg=COR_FUNDO_CONTEUDO)
+        container.pack(fill="both", expand=True)
 
-        # "Sair" discreto, no canto superior direito — não compete com o
-        # cartão central, que é o foco principal da tela
-        botao_sair = tk.Label(
-            fundo,
-            text="Sair  ✕",
-            bg=COR_FUNDO_JANELA,
-            fg=COR_SAIR,
-            font=FONTE_SAIR,
-            cursor="hand2",
-        )
-        botao_sair.place(relx=1.0, x=-24, y=20, anchor="ne")
-        botao_sair.bind("<Button-1>", lambda e: self._root.destroy())
-        botao_sair.bind("<Enter>", lambda e: botao_sair.config(fg=COR_SAIR_HOVER))
-        botao_sair.bind("<Leave>", lambda e: botao_sair.config(fg=COR_SAIR))
+        self._criar_sidebar(container)
+        self._criar_conteudo_principal(container)
 
-        # Cartão central: fica no meio da janela independente do tamanho dela,
-        # porque relx/rely são recalculados quando a janela é redimensionada
-        cartao = tk.Frame(
-            fundo,
-            bg=COR_CARTAO,
-            padx=70,
-            pady=50,
-            highlightbackground=COR_BORDA_CARTAO,
-            highlightthickness=1,
-        )
-        cartao.place(relx=0.5, rely=0.45, anchor="center")
+    def _criar_sidebar(self, container):
+        sidebar = tk.Frame(container, bg=COR_SIDEBAR, width=260)
+        sidebar.pack(side="left", fill="y")
+        sidebar.pack_propagate(False)
 
-        tk.Label(cartao, text="🛠️", bg=COR_CARTAO, font=("Segoe UI Emoji", 42)).pack(pady=(0, 12))
+        # Bloco de marca: emblema circular + nome + tagline
+        bloco_marca = tk.Frame(sidebar, bg=COR_SIDEBAR)
+        bloco_marca.pack(fill="x", padx=26, pady=(34, 26))
+
+        emblema = tk.Canvas(bloco_marca, width=46, height=46, bg=COR_SIDEBAR, highlightthickness=0)
+        emblema.create_oval(2, 2, 44, 44, fill=COR_ACCENT, outline="")
+        emblema.create_text(23, 23, text="AT", fill=COR_SIDEBAR, font=("Segoe UI", 14, "bold"))
+        emblema.pack(anchor="w")
 
         tk.Label(
-            cartao,
+            bloco_marca,
             text="Assistência Técnica",
-            bg=COR_CARTAO,
-            fg=COR_TITULO,
-            font=FONTE_TITULO,
-        ).pack()
+            bg=COR_SIDEBAR,
+            fg="#ffffff",
+            font=FONTE_MARCA,
+            wraplength=200,
+            justify="left",
+        ).pack(anchor="w", pady=(14, 2))
 
         tk.Label(
-            cartao,
-            text="Sistema de Gestão de Ordens de Serviço",
-            bg=COR_CARTAO,
+            bloco_marca,
+            text="Sistema ERP Corporativo",
+            bg=COR_SIDEBAR,
+            fg=COR_SIDEBAR_TEXTO,
+            font=FONTE_TAGLINE,
+        ).pack(anchor="w")
+
+        tk.Frame(sidebar, bg=COR_SIDEBAR_HOVER, height=1).pack(fill="x", padx=26, pady=(24, 18))
+
+        tk.Label(
+            sidebar,
+            text="MENU PRINCIPAL",
+            bg=COR_SIDEBAR,
+            fg=COR_SIDEBAR_TEXTO,
+            font=FONTE_NAV_SECAO,
+        ).pack(anchor="w", padx=26, pady=(0, 10))
+
+        for icone, titulo, _descricao, nome_metodo, _cor in MODULOS:
+            comando = getattr(self, nome_metodo)
+            self._criar_item_nav(sidebar, icone, titulo, comando)
+
+        # "Sair" fica ancorado embaixo da sidebar, mesmo com a janela maximizada
+        rodape = tk.Frame(sidebar, bg=COR_SIDEBAR)
+        rodape.pack(side="bottom", fill="x", pady=(0, 26))
+        tk.Frame(rodape, bg=COR_SIDEBAR_HOVER, height=1).pack(fill="x", padx=26, pady=(0, 14))
+        self._criar_item_nav(rodape, "🚪", "Sair", self._root.destroy, cor_hover=COR_SAIR_HOVER)
+
+    def _criar_item_nav(self, container, icone, titulo, comando, cor_hover=COR_SIDEBAR_HOVER):
+        """Um item de navegação da sidebar: destaca com uma faixa lateral ao passar o mouse."""
+        item = tk.Frame(container, bg=COR_SIDEBAR, cursor="hand2")
+        item.pack(fill="x", padx=14, pady=2)
+
+        faixa = tk.Frame(item, bg=COR_SIDEBAR, width=3)
+        faixa.pack(side="left", fill="y")
+
+        conteudo = tk.Frame(item, bg=COR_SIDEBAR)
+        conteudo.pack(side="left", fill="x", expand=True, padx=(10, 0), pady=10)
+
+        rotulo = tk.Label(
+            conteudo,
+            text=f"{icone}   {titulo}",
+            bg=COR_SIDEBAR,
+            fg=COR_SIDEBAR_TEXTO,
+            font=FONTE_NAV_ITEM,
+            anchor="w",
+        )
+        rotulo.pack(fill="x")
+
+        widgets = (item, faixa, conteudo, rotulo)
+
+        def ao_entrar(event=None):
+            item.configure(bg=cor_hover)
+            conteudo.configure(bg=cor_hover)
+            rotulo.configure(bg=cor_hover, fg=COR_SIDEBAR_TEXTO_ATIVO)
+            faixa.configure(bg=COR_ACCENT)
+
+        def ao_sair(event=None):
+            item.configure(bg=COR_SIDEBAR)
+            conteudo.configure(bg=COR_SIDEBAR)
+            rotulo.configure(bg=COR_SIDEBAR, fg=COR_SIDEBAR_TEXTO)
+            faixa.configure(bg=COR_SIDEBAR)
+
+        for widget in widgets:
+            widget.bind("<Enter>", ao_entrar)
+            widget.bind("<Leave>", ao_sair)
+            widget.bind("<Button-1>", lambda event: comando())
+
+    def _criar_conteudo_principal(self, container):
+        conteudo = tk.Frame(container, bg=COR_FUNDO_CONTEUDO)
+        conteudo.pack(side="left", fill="both", expand=True)
+
+        self._criar_barra_superior(conteudo)
+
+        bloco_boasvindas = tk.Frame(conteudo, bg=COR_FUNDO_CONTEUDO)
+        bloco_boasvindas.pack(fill="x", padx=48, pady=(28, 6))
+
+        tk.Label(
+            bloco_boasvindas,
+            text="Bem-vindo(a) 👋",
+            bg=COR_FUNDO_CONTEUDO,
+            fg=COR_TITULO,
+            font=FONTE_BEMVINDO,
+        ).pack(anchor="w")
+
+        tk.Label(
+            bloco_boasvindas,
+            text="Selecione um módulo abaixo para começar o atendimento.",
+            bg=COR_FUNDO_CONTEUDO,
             fg=COR_SUBTITULO,
-            font=FONTE_SUBTITULO,
-        ).pack(pady=(4, 32))
+            font=FONTE_SUBTITULO_BEMVINDO,
+        ).pack(anchor="w", pady=(6, 0))
 
-        self._criar_botao_atendimento(cartao)
+        self._criar_grade_modulos(conteudo)
 
-    def _criar_botao_atendimento(self, container):
-        """
-        Botão central que abre o menu suspenso de Atendimento.
-        Usa Label + tk_popup() manual (não Menubutton) pelo mesmo motivo de
-        antes: o clique automático do Menubutton restilizado é pouco confiável.
-        """
-        menu_suspenso = tk.Menu(
-            self._root,
-            tearoff=0,
-            bg=COR_BOTAO,
-            fg=COR_BOTAO_TEXTO,
-            activebackground=COR_BOTAO_HOVER,
-            activeforeground="white",
-            font=FONTE_MENU_ITEM,
-            bd=0,
-            relief="flat",
+    def _criar_barra_superior(self, container):
+        barra = tk.Frame(
+            container, bg=COR_CARTAO, height=54,
+            highlightbackground=COR_BORDA_CARTAO, highlightthickness=1,
         )
-        itens = [
-            ("🧾  Ordens de Serviço", self._abrir_ordem_servico),
-            ("👤  Clientes", self._abrir_cliente),
-            ("🧑‍🔧  Funcionários", self._abrir_funcionario),
-            ("🖥️  Equipamentos", self._abrir_equipamento),
-            ("🛠️  Serviços", self._abrir_servico),
-            ("🔩  Peças", self._abrir_peca),
-        ]
-        for label, comando in itens:
-            menu_suspenso.add_command(label=label, command=comando)
+        barra.pack(fill="x")
+        barra.pack_propagate(False)
 
-        botao = tk.Label(
-            container,
-            text="  ☰   Atendimento   ",
-            bg=COR_BOTAO,
-            fg=COR_BOTAO_TEXTO,
-            font=FONTE_BOTAO,
-            cursor="hand2",
-            padx=10,
-            pady=12,
+        tk.Label(
+            barra, text="Painel Inicial", bg=COR_CARTAO, fg=COR_TITULO, font=FONTE_TOPBAR_TITULO
+        ).pack(side="left", padx=30)
+
+        tk.Label(
+            barra, text=self._data_por_extenso(), bg=COR_CARTAO, fg=COR_SUBTITULO, font=FONTE_TOPBAR_DATA
+        ).pack(side="right", padx=30)
+
+    @staticmethod
+    def _data_por_extenso():
+        dias = ["segunda-feira", "terça-feira", "quarta-feira", "quinta-feira",
+                "sexta-feira", "sábado", "domingo"]
+        meses = ["janeiro", "fevereiro", "março", "abril", "maio", "junho",
+                 "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
+        agora = datetime.now()
+        dia_semana = dias[agora.weekday()].capitalize()
+        return f"{dia_semana}, {agora.day} de {meses[agora.month - 1]} de {agora.year}"
+
+    def _criar_grade_modulos(self, container):
+        """
+        Grade de cartões (tiles), um por módulo. Usa columnconfigure/rowconfigure
+        com weight para que os cartões cresçam junto com a janela (ela abre
+        'zoomed'), sem sobrar espaço vazio.
+        """
+        grade = tk.Frame(container, bg=COR_FUNDO_CONTEUDO)
+        grade.pack(fill="both", expand=True, padx=48, pady=(24, 40))
+
+        colunas = 3
+        for coluna in range(colunas):
+            grade.columnconfigure(coluna, weight=1, uniform="col")
+        for linha in range(2):
+            grade.rowconfigure(linha, weight=1, uniform="row")
+
+        for indice, (icone, titulo, descricao, nome_metodo, cor) in enumerate(MODULOS):
+            comando = getattr(self, nome_metodo)
+            linha, coluna = divmod(indice, colunas)
+            tile = self._criar_tile(grade, icone, titulo, descricao, comando, cor)
+            tile.grid(row=linha, column=coluna, padx=14, pady=14, sticky="nsew")
+
+    def _criar_tile(self, container, icone, titulo, descricao, comando, cor_destaque):
+        """Cartão clicável: faixa colorida no topo, emblema circular e destaque ao passar o mouse."""
+        tile = tk.Frame(
+            container, bg=COR_CARTAO,
+            highlightbackground=COR_BORDA_CARTAO, highlightthickness=1, cursor="hand2",
         )
-        botao.pack()
 
-        def abrir_menu(event=None):
-            x = botao.winfo_rootx()
-            y = botao.winfo_rooty() + botao.winfo_height()
-            menu_suspenso.tk_popup(x, y)
+        tk.Frame(tile, bg=cor_destaque, height=4).pack(fill="x", side="top")
 
-        botao.bind("<Button-1>", abrir_menu)
-        botao.bind("<Enter>", lambda e: botao.config(bg=COR_BOTAO_HOVER))
-        botao.bind("<Leave>", lambda e: botao.config(bg=COR_BOTAO))
+        conteudo = tk.Frame(tile, bg=COR_CARTAO)
+        conteudo.pack(expand=True, fill="both", padx=24, pady=20)
 
-        return botao
+        emblema = tk.Canvas(conteudo, width=68, height=68, bg=COR_CARTAO, highlightthickness=0)
+        emblema.create_oval(2, 2, 66, 66, fill=self._clarear_cor(cor_destaque), outline="")
+        emblema.create_text(34, 34, text=icone, font=("Segoe UI Emoji", 30))
+        emblema.pack(anchor="w")
+
+        rotulo_titulo = tk.Label(
+            conteudo, text=titulo, bg=COR_CARTAO, fg=COR_TITULO, font=FONTE_TILE_TITULO
+        )
+        rotulo_titulo.pack(anchor="w", pady=(18, 6))
+
+        rotulo_descricao = tk.Label(
+            conteudo, text=descricao, bg=COR_CARTAO, fg=COR_SUBTITULO, font=FONTE_TILE_DESCRICAO,
+            wraplength=280, justify="left",
+        )
+        rotulo_descricao.pack(anchor="w")
+
+        widgets = (tile, conteudo, emblema, rotulo_titulo, rotulo_descricao)
+
+        def ao_entrar(event=None):
+            tile.configure(highlightbackground=cor_destaque, highlightthickness=2)
+
+        def ao_sair(event=None):
+            tile.configure(highlightbackground=COR_BORDA_CARTAO, highlightthickness=1)
+
+        for widget in widgets:
+            widget.bind("<Enter>", ao_entrar)
+            widget.bind("<Leave>", ao_sair)
+            widget.bind("<Button-1>", lambda event: comando())
+
+        return tile
+
+    @staticmethod
+    def _clarear_cor(cor_hex, fator=0.82):
+        """Gera uma versão bem clara (pastel) de uma cor hex, para o fundo do emblema."""
+        cor_hex = cor_hex.lstrip("#")
+        r, g, b = int(cor_hex[0:2], 16), int(cor_hex[2:4], 16), int(cor_hex[4:6], 16)
+        r = int(r + (255 - r) * fator)
+        g = int(g + (255 - g) * fator)
+        b = int(b + (255 - b) * fator)
+        return f"#{r:02x}{g:02x}{b:02x}"
 
     # ------------------------------------------------------------------
     # Abertura das telas (janelas Toplevel)

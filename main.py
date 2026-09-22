@@ -31,6 +31,26 @@ from app.view.peca_view import Peca_View
 # a aba "Serviços Prestados" embutida na Ordem_servico_View. O import dela e
 # de Ordem_servico_Peca_View não são mais necessários aqui.
 
+# --- Paleta e fontes da tela inicial ---
+COR_FUNDO_JANELA = "#eef2f5"
+COR_CARTAO = "#ffffff"
+COR_BORDA_CARTAO = "#dfe6e9"
+COR_TITULO = "#1a252f"
+COR_SUBTITULO = "#7f8c8d"
+
+COR_BOTAO = "#2c3e50"
+COR_BOTAO_HOVER = "#3d566e"
+COR_BOTAO_TEXTO = "#ecf0f1"
+
+COR_SAIR = "#95a5a6"
+COR_SAIR_HOVER = "#c0392b"
+
+FONTE_TITULO = ("Segoe UI", 26, "bold")
+FONTE_SUBTITULO = ("Segoe UI", 11)
+FONTE_BOTAO = ("Segoe UI", 12, "bold")
+FONTE_MENU_ITEM = ("Segoe UI", 10)
+FONTE_SAIR = ("Segoe UI", 10)
+
 
 class ErpApplication:
 
@@ -88,56 +108,122 @@ class ErpApplication:
         self._controller_ordem_servico_peca = Ordem_Servico_Peca_Controller(
             self._dao_ordem_servico_peca, self._dao_peca, self._dao_ordem_servico
         )
-        self._criar_menu()
+        self._criar_tela_inicial()
 
     def _configurar_janela(self):
         self._root.title("Sistema ERP - Assistência Técnica")
         self._root.state("zoomed")
+        self._root.configure(bg=COR_FUNDO_JANELA)
 
-    def _criar_menu(self):
-        menu_principal = tk.Menu(self._root)
+    # ------------------------------------------------------------------
+    # Tela inicial: cartão centralizado com título, subtítulo e menu
+    # ------------------------------------------------------------------
 
-        # Menu Atendimento
-        menu_atendimento = tk.Menu(menu_principal, tearoff=0)
-        menu_atendimento.add_command(
-            label="Ordens de Serviço",
-            command=self._abrir_ordem_servico
-        )
-        menu_atendimento.add_command(
-            label="Clientes",
-            command=self._abrir_cliente
-        )
-        menu_atendimento.add_command(
-            label="Funcionarios",
-            command=self._abrir_funcionario
-        )
-        menu_atendimento.add_command(
-            label="Equipamentos",
-            command=self._abrir_equipamento
-        )
-        menu_atendimento.add_command(
-            label="Serviços",
-            command=self._abrir_servico
-        )
-        menu_atendimento.add_command(
-            label="Peças",
-            command=self._abrir_peca
-        )
-        # "Serviços Prestados" saiu do menu: agora é a aba "Serviços Prestados"
-        # dentro da própria tela de Ordem de Serviço (precisa saber a ordem
-        # selecionada, então não fazia sentido como janela solta).
-        menu_principal.add_cascade(
-            label="Atendimento",
-            menu=menu_atendimento
-        )
+    def _criar_tela_inicial(self):
+        fundo = tk.Frame(self._root, bg=COR_FUNDO_JANELA)
+        fundo.pack(fill="both", expand=True)
 
-        # Encerrar aplicação
-        menu_principal.add_command(
-            label="Sair",
-            command=self._root.destroy
+        # "Sair" discreto, no canto superior direito — não compete com o
+        # cartão central, que é o foco principal da tela
+        botao_sair = tk.Label(
+            fundo,
+            text="Sair  ✕",
+            bg=COR_FUNDO_JANELA,
+            fg=COR_SAIR,
+            font=FONTE_SAIR,
+            cursor="hand2",
         )
+        botao_sair.place(relx=1.0, x=-24, y=20, anchor="ne")
+        botao_sair.bind("<Button-1>", lambda e: self._root.destroy())
+        botao_sair.bind("<Enter>", lambda e: botao_sair.config(fg=COR_SAIR_HOVER))
+        botao_sair.bind("<Leave>", lambda e: botao_sair.config(fg=COR_SAIR))
 
-        self._root.config(menu=menu_principal)
+        # Cartão central: fica no meio da janela independente do tamanho dela,
+        # porque relx/rely são recalculados quando a janela é redimensionada
+        cartao = tk.Frame(
+            fundo,
+            bg=COR_CARTAO,
+            padx=70,
+            pady=50,
+            highlightbackground=COR_BORDA_CARTAO,
+            highlightthickness=1,
+        )
+        cartao.place(relx=0.5, rely=0.45, anchor="center")
+
+        tk.Label(cartao, text="🛠️", bg=COR_CARTAO, font=("Segoe UI Emoji", 42)).pack(pady=(0, 12))
+
+        tk.Label(
+            cartao,
+            text="Assistência Técnica",
+            bg=COR_CARTAO,
+            fg=COR_TITULO,
+            font=FONTE_TITULO,
+        ).pack()
+
+        tk.Label(
+            cartao,
+            text="Sistema de Gestão de Ordens de Serviço",
+            bg=COR_CARTAO,
+            fg=COR_SUBTITULO,
+            font=FONTE_SUBTITULO,
+        ).pack(pady=(4, 32))
+
+        self._criar_botao_atendimento(cartao)
+
+    def _criar_botao_atendimento(self, container):
+        """
+        Botão central que abre o menu suspenso de Atendimento.
+        Usa Label + tk_popup() manual (não Menubutton) pelo mesmo motivo de
+        antes: o clique automático do Menubutton restilizado é pouco confiável.
+        """
+        menu_suspenso = tk.Menu(
+            self._root,
+            tearoff=0,
+            bg=COR_BOTAO,
+            fg=COR_BOTAO_TEXTO,
+            activebackground=COR_BOTAO_HOVER,
+            activeforeground="white",
+            font=FONTE_MENU_ITEM,
+            bd=0,
+            relief="flat",
+        )
+        itens = [
+            ("🧾  Ordens de Serviço", self._abrir_ordem_servico),
+            ("👤  Clientes", self._abrir_cliente),
+            ("🧑‍🔧  Funcionários", self._abrir_funcionario),
+            ("🖥️  Equipamentos", self._abrir_equipamento),
+            ("🛠️  Serviços", self._abrir_servico),
+            ("🔩  Peças", self._abrir_peca),
+        ]
+        for label, comando in itens:
+            menu_suspenso.add_command(label=label, command=comando)
+
+        botao = tk.Label(
+            container,
+            text="  ☰   Atendimento   ",
+            bg=COR_BOTAO,
+            fg=COR_BOTAO_TEXTO,
+            font=FONTE_BOTAO,
+            cursor="hand2",
+            padx=10,
+            pady=12,
+        )
+        botao.pack()
+
+        def abrir_menu(event=None):
+            x = botao.winfo_rootx()
+            y = botao.winfo_rooty() + botao.winfo_height()
+            menu_suspenso.tk_popup(x, y)
+
+        botao.bind("<Button-1>", abrir_menu)
+        botao.bind("<Enter>", lambda e: botao.config(bg=COR_BOTAO_HOVER))
+        botao.bind("<Leave>", lambda e: botao.config(bg=COR_BOTAO))
+
+        return botao
+
+    # ------------------------------------------------------------------
+    # Abertura das telas (janelas Toplevel)
+    # ------------------------------------------------------------------
 
     def _abrir_ordem_servico(self):
         # Evita duplicar a abertura da mesma janela no Tkinter

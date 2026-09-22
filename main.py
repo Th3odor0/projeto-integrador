@@ -32,20 +32,36 @@ from app.view.peca_view import Peca_View
 # a aba "Serviços Prestados" embutida na Ordem_servico_View. O import dela e
 # de Ordem_servico_Peca_View não são mais necessários aqui.
 
-# --- Paleta corporativa: sidebar em azul-marinho + destaque dourado ---
-COR_SIDEBAR = "#101a2c"
-COR_SIDEBAR_HOVER = "#1c2a44"
-COR_SIDEBAR_TEXTO = "#a9b3c2"
-COR_SIDEBAR_TEXTO_ATIVO = "#ffffff"
-COR_ACCENT = "#c9a227"
+# --- Temas: cada um é um dicionário com as mesmas chaves, trocado em bloco
+# ao alternar entre claro/escuro. O dourado (accent) e as cores dos módulos
+# ficam fixos nos dois temas — são identidade visual, não dependem do modo.
+TEMA_CLARO = {
+    "sidebar": "#101a2c",
+    "sidebar_hover": "#1c2a44",
+    "sidebar_texto": "#a9b3c2",
+    "sidebar_texto_ativo": "#ffffff",
+    "accent": "#c9a227",
+    "fundo_conteudo": "#f4f6f9",
+    "cartao": "#ffffff",
+    "borda_cartao": "#e3e8ee",
+    "titulo": "#101828",
+    "subtitulo": "#667085",
+    "sair_hover": "#c0392b",
+}
 
-COR_FUNDO_CONTEUDO = "#f4f6f9"
-COR_CARTAO = "#ffffff"
-COR_BORDA_CARTAO = "#e3e8ee"
-COR_TITULO = "#101828"
-COR_SUBTITULO = "#667085"
-
-COR_SAIR_HOVER = "#c0392b"
+TEMA_ESCURO = {
+    "sidebar": "#0a0f1a",
+    "sidebar_hover": "#16202f",
+    "sidebar_texto": "#8a94a6",
+    "sidebar_texto_ativo": "#ffffff",
+    "accent": "#c9a227",
+    "fundo_conteudo": "#12161f",
+    "cartao": "#1a1f2b",
+    "borda_cartao": "#2a3040",
+    "titulo": "#f2f4f7",
+    "subtitulo": "#98a2b3",
+    "sair_hover": "#e05252",
+}
 
 FONTE_MARCA = ("Segoe UI", 16, "bold")
 FONTE_TAGLINE = ("Segoe UI", 9)
@@ -80,6 +96,13 @@ class ErpApplication:
         self._janela_equipamento = None
         self._janela_servico = None
         self._janela_peca = None
+
+        # Estado do tema: guardamos qual está ativo e o dicionário de cores
+        # correspondente. Toda a UI lê as cores daqui (self._cores), nunca
+        # de uma constante fixa, para que a troca de tema afete tudo de uma vez.
+        self._tema_atual = "claro"
+        self._cores = TEMA_CLARO
+        self._container_tela_inicial = None
 
         self._configurar_janela()
 
@@ -129,37 +152,53 @@ class ErpApplication:
     def _configurar_janela(self):
         self._root.title("Sistema ERP - Assistência Técnica")
         self._root.state("zoomed")
-        self._root.configure(bg=COR_FUNDO_CONTEUDO)
+        self._root.configure(bg=self._cores["fundo_conteudo"])
+
+    # ------------------------------------------------------------------
+    # Alternância de tema
+    # ------------------------------------------------------------------
+
+    def _alternar_tema(self):
+        """Troca o tema ativo e reconstrói a tela inicial inteira com a nova paleta."""
+        self._tema_atual = "escuro" if self._tema_atual == "claro" else "claro"
+        self._cores = TEMA_ESCURO if self._tema_atual == "escuro" else TEMA_CLARO
+
+        if self._container_tela_inicial is not None:
+            self._container_tela_inicial.destroy()
+
+        self._root.configure(bg=self._cores["fundo_conteudo"])
+        self._criar_tela_inicial()
 
     # ------------------------------------------------------------------
     # Tela inicial: sidebar de navegação + painel principal com módulos
     # ------------------------------------------------------------------
 
     def _criar_tela_inicial(self):
-        container = tk.Frame(self._root, bg=COR_FUNDO_CONTEUDO)
+        container = tk.Frame(self._root, bg=self._cores["fundo_conteudo"])
         container.pack(fill="both", expand=True)
+        self._container_tela_inicial = container
 
         self._criar_sidebar(container)
         self._criar_conteudo_principal(container)
 
     def _criar_sidebar(self, container):
-        sidebar = tk.Frame(container, bg=COR_SIDEBAR, width=260)
+        sidebar = tk.Frame(container, bg=self._cores["sidebar"], width=260)
         sidebar.pack(side="left", fill="y")
         sidebar.pack_propagate(False)
 
         # Bloco de marca: emblema circular + nome + tagline
-        bloco_marca = tk.Frame(sidebar, bg=COR_SIDEBAR)
+        bloco_marca = tk.Frame(sidebar, bg=self._cores["sidebar"])
         bloco_marca.pack(fill="x", padx=26, pady=(34, 26))
 
-        emblema = tk.Canvas(bloco_marca, width=46, height=46, bg=COR_SIDEBAR, highlightthickness=0)
-        emblema.create_oval(2, 2, 44, 44, fill=COR_ACCENT, outline="")
-        emblema.create_text(23, 23, text="AT", fill=COR_SIDEBAR, font=("Segoe UI", 14, "bold"))
+        emblema = tk.Canvas(bloco_marca, width=46, height=46, bg=self._cores["sidebar"], highlightthickness=0)
+        emblema.create_oval(2, 2, 44, 44, fill=self._cores["accent"], outline="")
+        emblema.create_text(23, 23, text="AT", fill=self._cores["sidebar"], font=("Segoe UI", 14, "bold"))
         emblema.pack(anchor="w")
 
         tk.Label(
             bloco_marca,
             text="Assistência Técnica",
-            bg=COR_SIDEBAR,
+            bg=self._cores["sidebar"],
             fg="#ffffff",
             font=FONTE_MARCA,
             wraplength=200,
@@ -169,37 +208,54 @@ class ErpApplication:
         tk.Label(
             bloco_marca,
             text="Sistema ERP Corporativo",
-            bg=COR_SIDEBAR,
-            fg=COR_SIDEBAR_TEXTO,
+            bg=self._cores["sidebar"],
+            fg=self._cores["sidebar_texto"],
             font=FONTE_TAGLINE,
         ).pack(anchor="w")
 
         # A navegação principal vive nos cartões do painel; a sidebar fica só
-        # com a marca e o "Sair", deixando o espaço em branco de propósito —
-        # é o padrão de apps corporativos mais enxutos (Stripe, Linear, Notion).
+        # com a marca, o alternador de tema e o "Sair", deixando o espaço em
+        # branco de propósito — é o padrão de apps corporativos mais enxutos
+        # (Stripe, Linear, Notion).
 
-        # "Sair" fica ancorado embaixo da sidebar, mesmo com a janela maximizada
-        rodape = tk.Frame(sidebar, bg=COR_SIDEBAR)
+        # Alternador de tema + "Sair" ficam ancorados embaixo da sidebar,
+        # mesmo com a janela maximizada
+        rodape = tk.Frame(sidebar, bg=self._cores["sidebar"])
         rodape.pack(side="bottom", fill="x", pady=(0, 26))
-        tk.Frame(rodape, bg=COR_SIDEBAR_HOVER, height=1).pack(fill="x", padx=26, pady=(0, 14))
-        self._criar_item_nav(rodape, "🚪", "Sair", self._root.destroy, cor_hover=COR_SAIR_HOVER)
+        tk.Frame(rodape, bg=self._cores["sidebar_hover"], height=1).pack(fill="x", padx=26, pady=(0, 14))
 
-    def _criar_item_nav(self, container, icone, titulo, comando, cor_hover=COR_SIDEBAR_HOVER):
+        if self._tema_atual == "claro":
+            icone_tema, texto_tema = "🌙", "Modo escuro"
+        else:
+            icone_tema, texto_tema = "☀️", "Modo claro"
+        self._criar_item_nav(rodape, icone_tema, texto_tema, self._alternar_tema)
+
+        self._criar_item_nav(rodape, "🚪", "Sair", self._root.destroy, cor_hover=self._cores["sair_hover"])
+
+    def _criar_item_nav(self, container, icone, titulo, comando, cor_hover=None):
         """Um item de navegação da sidebar: destaca com uma faixa lateral ao passar o mouse."""
-        item = tk.Frame(container, bg=COR_SIDEBAR, cursor="hand2")
+        if cor_hover is None:
+            cor_hover = self._cores["sidebar_hover"]
+
+        cor_sidebar = self._cores["sidebar"]
+        cor_texto = self._cores["sidebar_texto"]
+        cor_texto_ativo = self._cores["sidebar_texto_ativo"]
+        cor_accent = self._cores["accent"]
+
+        item = tk.Frame(container, bg=cor_sidebar, cursor="hand2")
         item.pack(fill="x", padx=14, pady=2)
 
-        faixa = tk.Frame(item, bg=COR_SIDEBAR, width=3)
+        faixa = tk.Frame(item, bg=cor_sidebar, width=3)
         faixa.pack(side="left", fill="y")
 
-        conteudo = tk.Frame(item, bg=COR_SIDEBAR)
+        conteudo = tk.Frame(item, bg=cor_sidebar)
         conteudo.pack(side="left", fill="x", expand=True, padx=(10, 0), pady=10)
 
         rotulo = tk.Label(
             conteudo,
             text=f"{icone}   {titulo}",
-            bg=COR_SIDEBAR,
-            fg=COR_SIDEBAR_TEXTO,
+            bg=cor_sidebar,
+            fg=cor_texto,
             font=FONTE_NAV_ITEM,
             anchor="w",
         )
@@ -210,14 +266,14 @@ class ErpApplication:
         def ao_entrar(event=None):
             item.configure(bg=cor_hover)
             conteudo.configure(bg=cor_hover)
-            rotulo.configure(bg=cor_hover, fg=COR_SIDEBAR_TEXTO_ATIVO)
-            faixa.configure(bg=COR_ACCENT)
+            rotulo.configure(bg=cor_hover, fg=cor_texto_ativo)
+            faixa.configure(bg=cor_accent)
 
         def ao_sair(event=None):
-            item.configure(bg=COR_SIDEBAR)
-            conteudo.configure(bg=COR_SIDEBAR)
-            rotulo.configure(bg=COR_SIDEBAR, fg=COR_SIDEBAR_TEXTO)
-            faixa.configure(bg=COR_SIDEBAR)
+            item.configure(bg=cor_sidebar)
+            conteudo.configure(bg=cor_sidebar)
+            rotulo.configure(bg=cor_sidebar, fg=cor_texto)
+            faixa.configure(bg=cor_sidebar)
 
         for widget in widgets:
             widget.bind("<Enter>", ao_entrar)
@@ -225,27 +281,27 @@ class ErpApplication:
             widget.bind("<Button-1>", lambda event: comando())
 
     def _criar_conteudo_principal(self, container):
-        conteudo = tk.Frame(container, bg=COR_FUNDO_CONTEUDO)
+        conteudo = tk.Frame(container, bg=self._cores["fundo_conteudo"])
         conteudo.pack(side="left", fill="both", expand=True)
 
         self._criar_barra_superior(conteudo)
 
-        bloco_boasvindas = tk.Frame(conteudo, bg=COR_FUNDO_CONTEUDO)
+        bloco_boasvindas = tk.Frame(conteudo, bg=self._cores["fundo_conteudo"])
         bloco_boasvindas.pack(fill="x", padx=48, pady=(28, 6))
 
         tk.Label(
             bloco_boasvindas,
             text="Bem-vindo(a) 👋",
-            bg=COR_FUNDO_CONTEUDO,
-            fg=COR_TITULO,
+            bg=self._cores["fundo_conteudo"],
+            fg=self._cores["titulo"],
             font=FONTE_BEMVINDO,
         ).pack(anchor="w")
 
         tk.Label(
             bloco_boasvindas,
             text="Selecione um módulo abaixo para começar o atendimento.",
-            bg=COR_FUNDO_CONTEUDO,
-            fg=COR_SUBTITULO,
+            bg=self._cores["fundo_conteudo"],
+            fg=self._cores["subtitulo"],
             font=FONTE_SUBTITULO_BEMVINDO,
         ).pack(anchor="w", pady=(6, 0))
 
@@ -253,18 +309,20 @@ class ErpApplication:
 
     def _criar_barra_superior(self, container):
         barra = tk.Frame(
-            container, bg=COR_CARTAO, height=54,
-            highlightbackground=COR_BORDA_CARTAO, highlightthickness=1,
+            container, bg=self._cores["cartao"], height=54,
+            highlightbackground=self._cores["borda_cartao"], highlightthickness=1,
         )
         barra.pack(fill="x")
         barra.pack_propagate(False)
 
         tk.Label(
-            barra, text="Painel Inicial", bg=COR_CARTAO, fg=COR_TITULO, font=FONTE_TOPBAR_TITULO
+            barra, text="Painel Inicial", bg=self._cores["cartao"], fg=self._cores["titulo"],
+            font=FONTE_TOPBAR_TITULO
         ).pack(side="left", padx=30)
 
         tk.Label(
-            barra, text=self._data_por_extenso(), bg=COR_CARTAO, fg=COR_SUBTITULO, font=FONTE_TOPBAR_DATA
+            barra, text=self._data_por_extenso(), bg=self._cores["cartao"], fg=self._cores["subtitulo"],
+            font=FONTE_TOPBAR_DATA
         ).pack(side="right", padx=30)
 
     @staticmethod
@@ -283,7 +341,7 @@ class ErpApplication:
         com weight para que os cartões cresçam junto com a janela (ela abre
         'zoomed'), sem sobrar espaço vazio.
         """
-        grade = tk.Frame(container, bg=COR_FUNDO_CONTEUDO)
+        grade = tk.Frame(container, bg=self._cores["fundo_conteudo"])
         grade.pack(fill="both", expand=True, padx=48, pady=(24, 40))
 
         colunas = 3
@@ -300,28 +358,31 @@ class ErpApplication:
 
     def _criar_tile(self, container, icone, titulo, descricao, comando, cor_destaque):
         """Cartão clicável: faixa colorida no topo, emblema circular e destaque ao passar o mouse."""
+        cor_cartao = self._cores["cartao"]
+        cor_borda = self._cores["borda_cartao"]
+
         tile = tk.Frame(
-            container, bg=COR_CARTAO,
-            highlightbackground=COR_BORDA_CARTAO, highlightthickness=1, cursor="hand2",
+            container, bg=cor_cartao,
+            highlightbackground=cor_borda, highlightthickness=1, cursor="hand2",
         )
 
         tk.Frame(tile, bg=cor_destaque, height=4).pack(fill="x", side="top")
 
-        conteudo = tk.Frame(tile, bg=COR_CARTAO)
+        conteudo = tk.Frame(tile, bg=cor_cartao)
         conteudo.pack(expand=True, fill="both", padx=24, pady=20)
 
-        emblema = tk.Canvas(conteudo, width=68, height=68, bg=COR_CARTAO, highlightthickness=0)
-        emblema.create_oval(2, 2, 66, 66, fill=self._clarear_cor(cor_destaque), outline="")
+        emblema = tk.Canvas(conteudo, width=68, height=68, bg=cor_cartao, highlightthickness=0)
+        emblema.create_oval(2, 2, 66, 66, fill=self._misturar_cor(cor_destaque, cor_cartao), outline="")
         self._desenhar_icone_centralizado(emblema, icone, centro=34, tamanho_fonte=30)
         emblema.pack(anchor="w")
 
         rotulo_titulo = tk.Label(
-            conteudo, text=titulo, bg=COR_CARTAO, fg=COR_TITULO, font=FONTE_TILE_TITULO
+            conteudo, text=titulo, bg=cor_cartao, fg=self._cores["titulo"], font=FONTE_TILE_TITULO
         )
         rotulo_titulo.pack(anchor="w", pady=(18, 6))
 
         rotulo_descricao = tk.Label(
-            conteudo, text=descricao, bg=COR_CARTAO, fg=COR_SUBTITULO, font=FONTE_TILE_DESCRICAO,
+            conteudo, text=descricao, bg=cor_cartao, fg=self._cores["subtitulo"], font=FONTE_TILE_DESCRICAO,
             wraplength=280, justify="left",
         )
         rotulo_descricao.pack(anchor="w")
@@ -332,7 +393,7 @@ class ErpApplication:
             tile.configure(highlightbackground=cor_destaque, highlightthickness=2)
 
         def ao_sair(event=None):
-            tile.configure(highlightbackground=COR_BORDA_CARTAO, highlightthickness=1)
+            tile.configure(highlightbackground=cor_borda, highlightthickness=1)
 
         for widget in widgets:
             widget.bind("<Enter>", ao_entrar)
@@ -359,13 +420,23 @@ class ErpApplication:
         return item
 
     @staticmethod
-    def _clarear_cor(cor_hex, fator=0.82):
-        """Gera uma versão bem clara (pastel) de uma cor hex, para o fundo do emblema."""
-        cor_hex = cor_hex.lstrip("#")
-        r, g, b = int(cor_hex[0:2], 16), int(cor_hex[2:4], 16), int(cor_hex[4:6], 16)
-        r = int(r + (255 - r) * fator)
-        g = int(g + (255 - g) * fator)
-        b = int(b + (255 - b) * fator)
+    def _misturar_cor(cor_hex, cor_base_hex, fator=0.82):
+        """
+        Mistura cor_hex em direção a cor_base_hex (o fundo do cartão), gerando
+        uma versão suave dela. Usar o fundo do cartão como base (em vez de
+        branco fixo) é o que faz o emblema se adaptar automaticamente ao tema:
+        no claro vira um pastel claro, no escuro vira um tom mais discreto e
+        próximo do fundo escuro, em vez de um círculo branco berrante.
+        """
+        def para_rgb(hex_str):
+            hex_str = hex_str.lstrip("#")
+            return tuple(int(hex_str[i:i + 2], 16) for i in (0, 2, 4))
+
+        r1, g1, b1 = para_rgb(cor_hex)
+        r2, g2, b2 = para_rgb(cor_base_hex)
+        r = int(r1 + (r2 - r1) * fator)
+        g = int(g1 + (g2 - g1) * fator)
+        b = int(b1 + (b2 - b1) * fator)
         return f"#{r:02x}{g:02x}{b:02x}"
 
     # ------------------------------------------------------------------

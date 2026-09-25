@@ -1,13 +1,20 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 
+from app.view.estilo_view import (
+    COR_FUNDO_JANELA, CORES_MODULOS,
+    configurar_janela, criar_cabecalho, criar_cartao, criar_label,
+    criar_botao, estilizar_entry, aplicar_tema_widgets,
+)
+
+
 class Cliente_view(tk.Frame):
     def __init__(self, master, cliente_controller):
-        super().__init__(master)
+        super().__init__(master, bg=COR_FUNDO_JANELA)
         self.master = master
         self.controller = cliente_controller  # Controller que faz as validações com o banco
 
-        self.master.title("Cadastro de Clientes")
+        configurar_janela(self.master, "Clientes")
         self._criar_widgets()
         self._carregar_lista()
 
@@ -15,60 +22,77 @@ class Cliente_view(tk.Frame):
         self.pack(fill=tk.BOTH, expand=True)
 
     def _criar_widgets(self):
-        """Monta todos os campos de entrada, os botões e a lista da tela."""
+        """Monta o cabeçalho, o formulário (num cartão) e a lista de clientes."""
+        criar_cabecalho(
+            self, "Clientes", "Cadastro e histórico de clientes",
+            cor_destaque=CORES_MODULOS["cliente"],
+        )
+
+        corpo = tk.Frame(self, bg=COR_FUNDO_JANELA)
+        corpo.pack(fill="both", expand=True, padx=30, pady=(0, 24))
+
+        # --- Cartão do formulário ---
+        cartao_form = criar_cartao(corpo)
+        cartao_form.pack(fill="x", pady=(0, 20))
+
+        form = tk.Frame(cartao_form, bg=cartao_form["bg"])
+        form.pack(fill="x", padx=24, pady=20)
+
         linha = 0
 
         # --- Campo ID (somente leitura: só é preenchido automaticamente pelo sistema,
         # nunca digitado pelo usuário) ---
-        tk.Label(self, text="ID:").grid(row=linha, column=0, sticky="w", padx=5, pady=5)
-        self.entry_id = tk.Entry(self, width=40, state="readonly")
-        self.entry_id.grid(row=linha, column=1, padx=5, pady=5)
+        criar_label(form, "ID:").grid(row=linha, column=0, sticky="w", padx=5, pady=6)
+        self.entry_id = tk.Entry(form, width=40, state="readonly")
+        estilizar_entry(self.entry_id)
+        self.entry_id.grid(row=linha, column=1, padx=5, pady=6)
         linha += 1
 
         # --- Campo Nome ---
-        tk.Label(self, text="Nome:").grid(row=linha, column=0, sticky="w", padx=5, pady=5)
-        self.entry_nome = tk.Entry(self, width=40)
-        self.entry_nome.grid(row=linha, column=1, padx=5, pady=5)
+        criar_label(form, "Nome:").grid(row=linha, column=0, sticky="w", padx=5, pady=6)
+        self.entry_nome = tk.Entry(form, width=40)
+        estilizar_entry(self.entry_nome)
+        self.entry_nome.grid(row=linha, column=1, padx=5, pady=6)
         linha += 1
 
         # --- Campo CPF ---
-        tk.Label(self, text="CPF:").grid(row=linha, column=0, sticky="w", padx=5, pady=5)
-        self.entry_cpf = tk.Entry(self, width=40)
-        self.entry_cpf.grid(row=linha, column=1, padx=5, pady=5)
+        criar_label(form, "CPF:").grid(row=linha, column=0, sticky="w", padx=5, pady=6)
+        self.entry_cpf = tk.Entry(form, width=40)
+        estilizar_entry(self.entry_cpf)
+        self.entry_cpf.grid(row=linha, column=1, padx=5, pady=6)
         linha += 1
 
         # --- Campo Telefone ---
-        tk.Label(self, text="Telefone:").grid(row=linha, column=0, sticky="w", padx=5, pady=5)
-        self.entry_telefone = tk.Entry(self, width=40)
-        self.entry_telefone.grid(row=linha, column=1, padx=5, pady=5)
+        criar_label(form, "Telefone:").grid(row=linha, column=0, sticky="w", padx=5, pady=6)
+        self.entry_telefone = tk.Entry(form, width=40)
+        estilizar_entry(self.entry_telefone)
+        self.entry_telefone.grid(row=linha, column=1, padx=5, pady=6)
         linha += 1
 
         # --- Campo Email ---
-        tk.Label(self, text="Email:").grid(row=linha, column=0, sticky="w", padx=5, pady=5)
-        self.entry_email = tk.Entry(self, width=40)
-        self.entry_email.grid(row=linha, column=1, padx=5, pady=5)
+        criar_label(form, "Email:").grid(row=linha, column=0, sticky="w", padx=5, pady=6)
+        self.entry_email = tk.Entry(form, width=40)
+        estilizar_entry(self.entry_email)
+        self.entry_email.grid(row=linha, column=1, padx=5, pady=6)
         linha += 1
 
         # --- Botões de ação, um do lado do outro na mesma linha ---
-        frame_botoes = tk.Frame(self)
-        frame_botoes.grid(row=linha, column=0, columnspan=2, pady=10)
-        linha += 1
+        frame_botoes = tk.Frame(form, bg=form["bg"])
+        frame_botoes.grid(row=linha, column=0, columnspan=2, pady=(16, 0))
 
-        tk.Button(frame_botoes, text="Salvar", command=self._salvar).pack(side="left", padx=5)
-        tk.Button(frame_botoes, text="Atualizar", command=self._atualizar).pack(side="left", padx=5)
-        tk.Button(frame_botoes, text="Deletar", command=self._deletar).pack(side="left", padx=5)
-        tk.Button(frame_botoes, text="Novo", command=self._limpar_campos).pack(side="left", padx=5)
+        criar_botao(frame_botoes, "Salvar", self._salvar).pack(side="left", padx=5)
+        criar_botao(frame_botoes, "Atualizar", self._atualizar).pack(side="left", padx=5)
+        criar_botao(frame_botoes, "Deletar", self._deletar, estilo="perigo").pack(side="left", padx=5)
+        criar_botao(frame_botoes, "Novo", self._limpar_campos).pack(side="left", padx=5)
 
         # --- Lista de clientes já cadastrados ---
-        frame_lista = tk.Frame(self)
-        frame_lista.grid(row=linha, column=0, columnspan=2, sticky="nsew", padx=10, pady=(0, 10))
+        cartao_lista = criar_cartao(corpo)
+        cartao_lista.pack(fill="both", expand=True)
 
-        # Deixa a lista esticar quando a janela for redimensionada
-        self.grid_rowconfigure(linha, weight=1)
-        self.grid_columnconfigure(1, weight=1)
+        estilo_tabela = aplicar_tema_widgets()
 
         colunas = ("id", "nome", "cpf", "telefone", "email")
-        self.tree = ttk.Treeview(frame_lista, columns=colunas, show="headings")
+        self.tree = ttk.Treeview(cartao_lista, columns=colunas, show="headings", style=estilo_tabela)
         self.tree.heading("id", text="ID")
         self.tree.heading("nome", text="Nome")
         self.tree.heading("cpf", text="CPF")
@@ -81,10 +105,10 @@ class Cliente_view(tk.Frame):
         self.tree.column("telefone", width=110)
         self.tree.column("email", width=180)
 
-        self.tree.pack(fill="both", expand=True, side="left")
+        self.tree.pack(fill="both", expand=True, side="left", padx=(16, 0), pady=16)
 
-        scrollbar = ttk.Scrollbar(frame_lista, orient="vertical", command=self.tree.yview)
-        scrollbar.pack(side="right", fill="y")
+        scrollbar = ttk.Scrollbar(cartao_lista, orient="vertical", command=self.tree.yview)
+        scrollbar.pack(side="right", fill="y", padx=(0, 16), pady=16)
         self.tree.configure(yscrollcommand=scrollbar.set)
 
         self.tree.bind("<<TreeviewSelect>>", self._selecionar_cliente)

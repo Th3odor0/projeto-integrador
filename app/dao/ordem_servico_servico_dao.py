@@ -2,15 +2,6 @@ from app.models.ordem_servico_servico import Ordem_servico_servico
 
 
 class Ordem_servico_Servico_Dao:
-    """
-    DAO para a tabela de junção entre Ordem de Serviço e Serviço.
-
-    Tabela: ordem_servico_servicos (plural), colunas ordem_servico_id e
-    servico_id — conforme o diagrama do banco. Os atributos do model Python
-    continuam se chamando id_servico/id_ordem_servico; só o SQL usa os nomes
-    de coluna reais.
-    """
-
     def __init__(self, conexao):
         self.conexao = conexao
 

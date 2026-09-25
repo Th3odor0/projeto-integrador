@@ -39,14 +39,7 @@ class Cliente:
     @telefone.setter
     def telefone(self, novo_telefone):
         self._telefone = novo_telefone
-
-    @property
-    def email(self):
-        return self._email
-    @telefone.setter
-    def email(self, novo_telefone):
-        self._email = novo_telefone
-
+        
     @property
     def email(self):
         return self._email

@@ -1,6 +1,6 @@
 from app.view.crud_view_base import CrudViewBase
 
-class ServicoView(CrudViewBase):
+class Servico_View(CrudViewBase):
     TITULO = "Serviços"
     SUBTITULO = "Cadastro de serviços"
     MODULO = "servico"

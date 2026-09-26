@@ -23,7 +23,7 @@ from app.controller.ordem_servico_pecas_controller import Ordem_Servico_Peca_Con
 # View
 from app.view.menu_view import MenuPrincipal
 from app.view.ordem_servico_view import Ordem_servico_View
-from app.view.cliente_view import Cliente_view
+from app.view.cliente_view import Cliente_View
 from app.view.equipamento_view import Equipamento_View
 from app.view.funcionario_view import Funcionario_View
 from app.view.servico_view import Servico_View
@@ -147,7 +147,7 @@ class ErpApplication:
 
         janela = tk.Toplevel(self._root)
         self._janela_cliente = janela
-        Cliente_view(janela, self._controller_cliente)
+        Cliente_View(janela, self._controller_cliente)
 
     def _abrir_funcionario(self):
         if self._janela_funcionario is not None and self._janela_funcionario.winfo_exists():

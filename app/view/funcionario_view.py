@@ -1,16 +1,18 @@
 from app.view.crud_view_base import CrudViewBase
 
-class ServicoView(CrudViewBase):
-    TITULO = "Serviços"
-    SUBTITULO = "Cadastro de serviços"
-    MODULO = "servico"
+class Funcionario_View(CrudViewBase):
+    TITULO = "Funcionários"
+    SUBTITULO = "Cadastro de funcionários"
+    MODULO = "funcionario"
     CAMPOS = [
-        ("nome", "Nome"),
-        ("descricao", "Descrição"),
-        ("preco", "Preço"),
+        ("nome", "Nome:"),
+        ("email", "Email:"),
+        ("telefone", "Telefone:"),
+        ("cargo", "Cargo:"),
     ]
     COLUNAS_LARGURA = {
         "nome": 200,
-        "descricao": 300,
-        "preco": 100,
+        "email": 200,
+        "telefone": 150,
+        "cargo": 150,
     }

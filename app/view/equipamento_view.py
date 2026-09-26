@@ -1,7 +1,7 @@
 from app.view.crud_view_base import CrudViewBase
 
 
-class EquipamentoView(CrudViewBase):
+class Equipamento_View(CrudViewBase):
     TITULO = "Equipamentos"
     SUBTITULO = "Aparelhos recebidos para reparo"
     MODULO = "equipamento"

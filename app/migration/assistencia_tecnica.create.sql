@@ -1,3 +1,4 @@
+-- Active: 1789942013815@@127.0.0.1@3306@tecnico
 CREATE TABLE clientes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(100) NOT NULL,

@@ -1,21 +1,15 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-from app.view.estilo_view import (
-    COR_FUNDO_JANELA, CORES_MODULOS,
-    configurar_janela, criar_cabecalho, criar_cartao, criar_label,
-    criar_botao, estilizar_entry, aplicar_tema_widgets,
-)
-
 
 class Equipamento_View(tk.Frame):
     def __init__(self, master, equipamento_controller, cliente_dao):
-        super().__init__(master, bg=COR_FUNDO_JANELA)
+        super().__init__(master)
         self.master = master
         self.controller = equipamento_controller
         self.cliente_dao = cliente_dao  # usado só para popular o combobox de clientes
 
-        configurar_janela(self.master, "Equipamentos")
+        self.master.title("Cadastro de Equipamento")
         self._criar_widgets()
         self._carregar_combo_cliente()
         self._carregar_lista()
@@ -24,89 +18,71 @@ class Equipamento_View(tk.Frame):
         self.pack(fill=tk.BOTH, expand=True)
 
     def _criar_widgets(self):
-        """Monta o cabeçalho, o formulário (num cartão) e a lista de equipamentos."""
-        criar_cabecalho(
-            self, "Equipamentos", "Aparelhos recebidos para reparo",
-            cor_destaque=CORES_MODULOS["equipamento"],
-        )
-
-        estilo_tabela = aplicar_tema_widgets()  # também deixa o Combobox abaixo no tema certo
-
-        corpo = tk.Frame(self, bg=COR_FUNDO_JANELA)
-        corpo.pack(fill="both", expand=True, padx=30, pady=(0, 24))
-
-        # --- Cartão do formulário ---
-        cartao_form = criar_cartao(corpo)
-        cartao_form.pack(fill="x", pady=(0, 20))
-
-        form = tk.Frame(cartao_form, bg=cartao_form["bg"])
-        form.pack(fill="x", padx=24, pady=20)
-
+        """Monta os campos de entrada, os botões e a lista da tela."""
         linha = 0
 
         # --- Campo ID (somente leitura: preenchido pelo sistema, nunca digitado) ---
-        criar_label(form, "ID:").grid(row=linha, column=0, sticky="w", padx=5, pady=6)
-        self.entry_id = tk.Entry(form, width=40, state="readonly")
-        estilizar_entry(self.entry_id)
-        self.entry_id.grid(row=linha, column=1, padx=5, pady=6)
+        tk.Label(self, text="ID:").grid(row=linha, column=0, sticky="w", padx=5, pady=5)
+        self.entry_id = tk.Entry(self, width=40, state="readonly")
+        self.entry_id.grid(row=linha, column=1, padx=5, pady=5)
         linha += 1
 
         # --- Cliente ---
-        criar_label(form, "Cliente:").grid(row=linha, column=0, sticky="w", padx=5, pady=6)
-        self.combo_cliente = ttk.Combobox(form, state="readonly", width=38)
-        self.combo_cliente.grid(row=linha, column=1, padx=5, pady=6)
+        tk.Label(self, text="Cliente:").grid(row=linha, column=0, sticky="w", padx=5, pady=5)
+        self.combo_cliente = ttk.Combobox(self, state="readonly", width=38)
+        self.combo_cliente.grid(row=linha, column=1, padx=5, pady=5)
         linha += 1
 
         # --- Tipo ---
-        criar_label(form, "Tipo:").grid(row=linha, column=0, sticky="w", padx=5, pady=6)
-        self.entry_tipo = tk.Entry(form, width=40)
-        estilizar_entry(self.entry_tipo)
-        self.entry_tipo.grid(row=linha, column=1, padx=5, pady=6)
+        tk.Label(self, text="Tipo:").grid(row=linha, column=0, sticky="w", padx=5, pady=5)
+        self.entry_tipo = tk.Entry(self, width=40)
+        self.entry_tipo.grid(row=linha, column=1, padx=5, pady=5)
         linha += 1
 
         # --- Marca ---
-        criar_label(form, "Marca:").grid(row=linha, column=0, sticky="w", padx=5, pady=6)
-        self.entry_marca = tk.Entry(form, width=40)
-        estilizar_entry(self.entry_marca)
-        self.entry_marca.grid(row=linha, column=1, padx=5, pady=6)
+        tk.Label(self, text="Marca:").grid(row=linha, column=0, sticky="w", padx=5, pady=5)
+        self.entry_marca = tk.Entry(self, width=40)
+        self.entry_marca.grid(row=linha, column=1, padx=5, pady=5)
         linha += 1
 
         # --- Modelo ---
-        criar_label(form, "Modelo:").grid(row=linha, column=0, sticky="w", padx=5, pady=6)
-        self.entry_modelo = tk.Entry(form, width=40)
-        estilizar_entry(self.entry_modelo)
-        self.entry_modelo.grid(row=linha, column=1, padx=5, pady=6)
+        tk.Label(self, text="Modelo:").grid(row=linha, column=0, sticky="w", padx=5, pady=5)
+        self.entry_modelo = tk.Entry(self, width=40)
+        self.entry_modelo.grid(row=linha, column=1, padx=5, pady=5)
         linha += 1
 
         # --- Número de série ---
-        criar_label(form, "Número de série:").grid(row=linha, column=0, sticky="w", padx=5, pady=6)
-        self.entry_numero_serie = tk.Entry(form, width=40)
-        estilizar_entry(self.entry_numero_serie)
-        self.entry_numero_serie.grid(row=linha, column=1, padx=5, pady=6)
+        tk.Label(self, text="Número de série:").grid(row=linha, column=0, sticky="w", padx=5, pady=5)
+        self.entry_numero_serie = tk.Entry(self, width=40)
+        self.entry_numero_serie.grid(row=linha, column=1, padx=5, pady=5)
         linha += 1
 
         # --- Botões de ação ---
-        frame_botoes = tk.Frame(form, bg=form["bg"])
-        frame_botoes.grid(row=linha, column=0, columnspan=2, pady=(16, 0))
+        frame_botoes = tk.Frame(self)
+        frame_botoes.grid(row=linha, column=0, columnspan=2, pady=10)
+        linha += 1
 
-        criar_botao(frame_botoes, "Salvar", self._salvar).pack(side="left", padx=5)
-        criar_botao(frame_botoes, "Atualizar", self._atualizar).pack(side="left", padx=5)
-        criar_botao(frame_botoes, "Deletar", self._deletar, estilo="perigo").pack(side="left", padx=5)
-        criar_botao(frame_botoes, "Novo", self._limpar_campos).pack(side="left", padx=5)
+        tk.Button(frame_botoes, text="Salvar", command=self._salvar).pack(side="left", padx=5)
+        tk.Button(frame_botoes, text="Atualizar", command=self._atualizar).pack(side="left", padx=5)
+        tk.Button(frame_botoes, text="Deletar", command=self._deletar).pack(side="left", padx=5)
+        tk.Button(frame_botoes, text="Novo", command=self._limpar_campos).pack(side="left", padx=5)
 
         # --- Lista de equipamentos já cadastrados ---
-        cartao_lista = criar_cartao(corpo)
-        cartao_lista.pack(fill="both", expand=True)
+        frame_lista = tk.Frame(self)
+        frame_lista.grid(row=linha, column=0, columnspan=2, sticky="nsew", padx=10, pady=(0, 10))
+
+        # Deixa a lista esticar quando a janela for redimensionada
+        self.grid_rowconfigure(linha, weight=1)
+        self.grid_columnconfigure(1, weight=1)
 
         # 'cliente_id' fica escondido (não aparece na tela, só em displaycolumns abaixo),
         # mas é guardado no values da linha pra dar pra reselecionar o combo certo depois.
         colunas = ("id", "tipo", "marca", "modelo", "numero_serie", "cliente_id", "cliente_nome")
         self.tree = ttk.Treeview(
-            cartao_lista,
+            frame_lista,
             columns=colunas,
             show="headings",
-            displaycolumns=("id", "tipo", "marca", "modelo", "numero_serie", "cliente_nome"),
-            style=estilo_tabela,
+            displaycolumns=("id", "tipo", "marca", "modelo", "numero_serie", "cliente_nome")
         )
         self.tree.heading("id", text="ID")
         self.tree.heading("tipo", text="Tipo")
@@ -122,10 +98,10 @@ class Equipamento_View(tk.Frame):
         self.tree.column("numero_serie", width=100)
         self.tree.column("cliente_nome", width=160)
 
-        self.tree.pack(fill="both", expand=True, side="left", padx=(16, 0), pady=16)
+        self.tree.pack(fill="both", expand=True, side="left")
 
-        scrollbar = ttk.Scrollbar(cartao_lista, orient="vertical", command=self.tree.yview)
-        scrollbar.pack(side="right", fill="y", padx=(0, 16), pady=16)
+        scrollbar = ttk.Scrollbar(frame_lista, orient="vertical", command=self.tree.yview)
+        scrollbar.pack(side="right", fill="y")
         self.tree.configure(yscrollcommand=scrollbar.set)
 
         self.tree.bind("<<TreeviewSelect>>", self._selecionar_equipamento)

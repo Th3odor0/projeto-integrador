@@ -141,7 +141,10 @@ class Ordem_servico_Controller:
         valor_total = self._validar_valor_total(valor_total)
         dias_garantia = self._validar_dias_garantia(dias_garantia)
 
-        data_entrada = DataUtils.string_para_data(ordem.data_entrada)
+        # ordem.data_entrada já é um date (veio do banco) — NÃO passar por
+        # string_para_data de novo, que espera uma string "dd/mm/aaaa" e
+        # quebraria com um objeto date.
+        data_entrada = ordem.data_entrada
         if data_conclusao is not None and data_entrada is not None and data_conclusao < data_entrada:
             raise ValueError("Data de conclusão não pode ser anterior à data de entrada.")
 

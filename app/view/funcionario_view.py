@@ -1,20 +1,14 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-from app.view.estilo_view import (
-    COR_FUNDO_JANELA, CORES_MODULOS,
-    configurar_janela, criar_cabecalho, criar_cartao, criar_label,
-    criar_botao, estilizar_entry, aplicar_tema_widgets,
-)
-
 
 class Funcionario_View(tk.Frame):
     def __init__(self, master, funcionario_controller):
-        super().__init__(master, bg=COR_FUNDO_JANELA)
+        super().__init__(master)
         self.master = master
         self.controller = funcionario_controller  # Controller que faz as validações com o banco
 
-        configurar_janela(self.master, "Funcionários")
+        self.master.title("Cadastro de Funcionários")
         self._criar_widgets()
         self._carregar_lista()
 
@@ -22,69 +16,53 @@ class Funcionario_View(tk.Frame):
         self.pack(fill=tk.BOTH, expand=True)
 
     def _criar_widgets(self):
-        """Monta o cabeçalho, o formulário (num cartão) e a lista de funcionários."""
-        criar_cabecalho(
-            self, "Funcionários", "Equipe técnica e administrativa",
-            cor_destaque=CORES_MODULOS["funcionario"],
-        )
-
-        corpo = tk.Frame(self, bg=COR_FUNDO_JANELA)
-        corpo.pack(fill="both", expand=True, padx=30, pady=(0, 24))
-
-        # --- Cartão do formulário ---
-        cartao_form = criar_cartao(corpo)
-        cartao_form.pack(fill="x", pady=(0, 20))
-
-        form = tk.Frame(cartao_form, bg=cartao_form["bg"])
-        form.pack(fill="x", padx=24, pady=20)
-
+        """Monta os campos de entrada, os botões e a lista da tela."""
         linha = 0
 
         # --- Campo ID (somente leitura: preenchido pelo sistema, nunca digitado) ---
-        criar_label(form, "ID:").grid(row=linha, column=0, sticky="w", padx=5, pady=6)
-        self.entry_id = tk.Entry(form, width=40, state="readonly")
-        estilizar_entry(self.entry_id)
-        self.entry_id.grid(row=linha, column=1, padx=5, pady=6)
+        tk.Label(self, text="ID:").grid(row=linha, column=0, sticky="w", padx=5, pady=5)
+        self.entry_id = tk.Entry(self, width=40, state="readonly")
+        self.entry_id.grid(row=linha, column=1, padx=5, pady=5)
         linha += 1
 
         # --- Nome ---
-        criar_label(form, "Nome:").grid(row=linha, column=0, sticky="w", padx=5, pady=6)
-        self.entry_nome = tk.Entry(form, width=40)
-        estilizar_entry(self.entry_nome)
-        self.entry_nome.grid(row=linha, column=1, padx=5, pady=6)
+        tk.Label(self, text="Nome:").grid(row=linha, column=0, sticky="w", padx=5, pady=5)
+        self.entry_nome = tk.Entry(self, width=40)
+        self.entry_nome.grid(row=linha, column=1, padx=5, pady=5)
         linha += 1
 
         # --- CPF ---
-        criar_label(form, "CPF:").grid(row=linha, column=0, sticky="w", padx=5, pady=6)
-        self.entry_cpf = tk.Entry(form, width=40)
-        estilizar_entry(self.entry_cpf)
-        self.entry_cpf.grid(row=linha, column=1, padx=5, pady=6)
+        tk.Label(self, text="CPF:").grid(row=linha, column=0, sticky="w", padx=5, pady=5)
+        self.entry_cpf = tk.Entry(self, width=40)
+        self.entry_cpf.grid(row=linha, column=1, padx=5, pady=5)
         linha += 1
 
         # --- Cargo ---
-        criar_label(form, "Cargo:").grid(row=linha, column=0, sticky="w", padx=5, pady=6)
-        self.entry_cargo = tk.Entry(form, width=40)
-        estilizar_entry(self.entry_cargo)
-        self.entry_cargo.grid(row=linha, column=1, padx=5, pady=6)
+        tk.Label(self, text="Cargo:").grid(row=linha, column=0, sticky="w", padx=5, pady=5)
+        self.entry_cargo = tk.Entry(self, width=40)
+        self.entry_cargo.grid(row=linha, column=1, padx=5, pady=5)
         linha += 1
 
         # --- Botões de ação, um do lado do outro na mesma linha ---
-        frame_botoes = tk.Frame(form, bg=form["bg"])
-        frame_botoes.grid(row=linha, column=0, columnspan=2, pady=(16, 0))
+        frame_botoes = tk.Frame(self)
+        frame_botoes.grid(row=linha, column=0, columnspan=2, pady=10)
+        linha += 1
 
-        criar_botao(frame_botoes, "Salvar", self._salvar).pack(side="left", padx=5)
-        criar_botao(frame_botoes, "Atualizar", self._atualizar).pack(side="left", padx=5)
-        criar_botao(frame_botoes, "Deletar", self._deletar, estilo="perigo").pack(side="left", padx=5)
-        criar_botao(frame_botoes, "Novo", self._limpar_campos).pack(side="left", padx=5)
+        tk.Button(frame_botoes, text="Salvar", command=self._salvar).pack(side="left", padx=5)
+        tk.Button(frame_botoes, text="Atualizar", command=self._atualizar).pack(side="left", padx=5)
+        tk.Button(frame_botoes, text="Deletar", command=self._deletar).pack(side="left", padx=5)
+        tk.Button(frame_botoes, text="Novo", command=self._limpar_campos).pack(side="left", padx=5)
 
         # --- Lista de funcionários já cadastrados ---
-        cartao_lista = criar_cartao(corpo)
-        cartao_lista.pack(fill="both", expand=True)
+        frame_lista = tk.Frame(self)
+        frame_lista.grid(row=linha, column=0, columnspan=2, sticky="nsew", padx=10, pady=(0, 10))
 
-        estilo_tabela = aplicar_tema_widgets()
+        # Deixa a lista esticar quando a janela for redimensionada
+        self.grid_rowconfigure(linha, weight=1)
+        self.grid_columnconfigure(1, weight=1)
 
         colunas = ("id", "nome", "cpf", "cargo")
-        self.tree = ttk.Treeview(cartao_lista, columns=colunas, show="headings", style=estilo_tabela)
+        self.tree = ttk.Treeview(frame_lista, columns=colunas, show="headings")
         self.tree.heading("id", text="ID")
         self.tree.heading("nome", text="Nome")
         self.tree.heading("cpf", text="CPF")
@@ -95,10 +73,10 @@ class Funcionario_View(tk.Frame):
         self.tree.column("cpf", width=130)
         self.tree.column("cargo", width=180)
 
-        self.tree.pack(fill="both", expand=True, side="left", padx=(16, 0), pady=16)
+        self.tree.pack(fill="both", expand=True, side="left")
 
-        scrollbar = ttk.Scrollbar(cartao_lista, orient="vertical", command=self.tree.yview)
-        scrollbar.pack(side="right", fill="y", padx=(0, 16), pady=16)
+        scrollbar = ttk.Scrollbar(frame_lista, orient="vertical", command=self.tree.yview)
+        scrollbar.pack(side="right", fill="y")
         self.tree.configure(yscrollcommand=scrollbar.set)
 
         self.tree.bind("<<TreeviewSelect>>", self._selecionar_funcionario)

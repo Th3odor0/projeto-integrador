@@ -22,7 +22,9 @@ class Ordem_servico_View(tk.Frame):
         ("dias_garantia", "Dias de garantia:"),
     ]
     CAMPOS_ATUALIZAVEIS = [c for c, _ in CAMPOS_TEXTO if c != "data_entrada_texto"]
-    CAMPOS_IMUTAVEIS_NA_EDICAO = ["cliente", "funcionario", "equipamento"]
+    # Cliente, funcionário e equipamento agora são editáveis junto com o
+    # resto (entram em _coletar_dados_atualizacao); só a data de entrada
+    # continua travada na edição.
 
     def __init__(self, master, ordem_servico_controller, cliente_dao, funcionario_dao, equipamento_dao,
                  ordem_servico_servico_controller, servico_dao,
@@ -230,19 +232,18 @@ class Ordem_servico_View(tk.Frame):
     # ------------------------------------------------------------------
     # LÓGICA DE DADOS DA ORDEM (CRUD)
     # ------------------------------------------------------------------
-    # (Toda a lógica de tratamento de dados mantida idêntica para não quebrar validações)
     
     def _selecionar_ordem(self, event=None):
         if not (sel := self.tbl_ordens.selection()): return
         try:
             ordem = self.controller.buscar_por_id(self.tbl_ordens.item(sel[0])["values"][0])
             self.id_selecionado = ordem.id
-            self._travar_campos_imutaveis(False)
-            
+
             for c, v in [("cliente", ordem.cliente.id), ("funcionario", ordem.funcionario.id), ("equipamento", ordem.equipamento.id)]:
                 self._selecionar_valor_combo(self.combos[c], v)
             self.combos["status"].set(ordem.status)
 
+            self._bloquear_data_entrada(False)
             valores = {
                 "data_entrada_texto": DataUtils.data_para_string(ordem.data_entrada),
                 "data_conclusao_texto": DataUtils.data_para_string(ordem.data_conclusao),
@@ -253,21 +254,21 @@ class Ordem_servico_View(tk.Frame):
             for k, v in valores.items():
                 self.entradas[k].delete(0, tk.END)
                 self.entradas[k].insert(0, "" if v is None else str(v))
+            self._bloquear_data_entrada(True)
 
-            self._travar_campos_imutaveis(True)
             self._atualizar_aba_servicos()
             self._atualizar_aba_pecas()
         except Exception as e:
             messagebox.showerror("Erro", str(e))
 
-    def _travar_campos_imutaveis(self, travar):
-        estado_combo = "disabled" if travar else "readonly"
-        for c in self.CAMPOS_IMUTAVEIS_NA_EDICAO: self.combos[c].config(state=estado_combo)
+    def _bloquear_data_entrada(self, travar):
+        """Só a data de entrada continua travada na edição — cliente,
+        funcionário e equipamento agora podem ser alterados livremente."""
         self.entradas["data_entrada_texto"].config(state="disabled" if travar else "normal")
 
     def _limpar_campos(self):
         self.id_selecionado = None
-        self._travar_campos_imutaveis(False)
+        self._bloquear_data_entrada(False)
         for c in self.combos.values(): c.set("")
         self.combos["status"].current(0)
         for e in self.entradas.values(): e.delete(0, tk.END)
@@ -286,7 +287,12 @@ class Ordem_servico_View(tk.Frame):
 
     def _coletar_dados_atualizacao(self):
         dados = {k: self.entradas[k].get().strip() for k in self.CAMPOS_ATUALIZAVEIS}
-        dados["status"] = self.combos["status"].get()
+        dados.update(
+            id_cliente=self._extrair_id_combo(self.combos["cliente"].get()),
+            id_funcionario=self._extrair_id_combo(self.combos["funcionario"].get()),
+            id_equipamento=self._extrair_id_combo(self.combos["equipamento"].get()),
+            status=self.combos["status"].get()
+        )
         return dados
 
     def _novo(self): self._limpar_campos(); self.tbl_ordens.selection_remove(self.tbl_ordens.selection())

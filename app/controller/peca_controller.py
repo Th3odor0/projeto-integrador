@@ -1,14 +1,10 @@
-# Ajuste os imports abaixo conforme o caminho real dos seus arquivos no projeto
 from app.models.pecas import Peca
 
 
 class PecaController:
 
-
     def __init__(self, peca_dao):
         self.dao = peca_dao
-
- 
 
     def _validar_dados(self, nome, codigo, quantidade_estoque, preco_venda):
         erros = []
@@ -34,17 +30,13 @@ class PecaController:
         return erros
 
     def _codigo_ja_cadastrado(self, codigo):
-       
         codigo = (codigo or "").strip()
         for peca in self.dao.get_all():
             if peca.codigo == codigo:
                 return peca
         return None
 
-   
-
     def cadastrar(self, nome, codigo, quantidade_estoque, preco_venda):
-      
         erros = self._validar_dados(nome, codigo, quantidade_estoque, preco_venda)
         if erros:
             return False, "\n".join(erros)
@@ -61,7 +53,6 @@ class PecaController:
             return False, f"Erro ao cadastrar peça: {erro}"
 
     def atualizar(self, id, nome, codigo, quantidade_estoque, preco_venda):
-       
         peca = self.dao.get_by_id(id)
         if peca is None:
             return False, "Peça não encontrada."
@@ -85,7 +76,6 @@ class PecaController:
             return False, f"Erro ao atualizar peça: {erro}"
 
     def excluir(self, id):
-        """Exclui uma peça pelo ID."""
         if self.dao.get_by_id(id) is None:
             return False, "Peça não encontrada."
 
@@ -100,16 +90,14 @@ class PecaController:
     def buscar_por_id(self, id):
         return self.dao.get_by_id(id)
 
-    def listar_todos(self):
-        return self.dao.get_all()
-
-    # ---------- Regra de negócio adicional (opcional) ----------
+    def buscar_todos(self):
+        try:
+            return True, self.dao.get_all()
+        except Exception as erro:
+            return False, f"Erro ao buscar peças: {erro}"
 
     def dar_baixa_estoque(self, id, quantidade_utilizada):
-        """
-        Reduz a quantidade em estoque de uma peça, útil quando ela é usada
-        numa ordem de serviço (tabela ordem_servico_pecas). Remova se não precisar.
-        """
+        """Reduz a quantidade em estoque, usado quando a peça é aplicada numa ordem de serviço."""
         peca = self.dao.get_by_id(id)
         if peca is None:
             return False, "Peça não encontrada."

@@ -2,21 +2,15 @@ from app.dao.dao import DAO
 from app.models.ordem_servico_servico import Ordem_servico_servico
 
 
-class OrdemServicoServicoDAO(DAO):
-    def __init__(self, database, servico_dao=None):
+class Ordem_servico_Servico_Dao(DAO):
+    def __init__(self, database):
         super().__init__(database)
-        self.servico_dao = servico_dao
 
     def _montar_objeto(self, resultado):
-        servico = (
-            self.servico_dao.get_by_id(resultado[2])
-            if self.servico_dao
-            else resultado[2]
-        )
         return Ordem_servico_servico(
             id=resultado[0],
-            ordem_servico_id=resultado[1],
-            servico=servico,
+            id_ordem_servico=resultado[1],
+            id_servico=resultado[2],
             valor_cobrado=float(resultado[3]),
         )
 
@@ -35,15 +29,7 @@ class OrdemServicoServicoDAO(DAO):
 
     @staticmethod
     def _valores(item):
-        ordem_servico_id = (
-            item.ordem_servico.id
-            if hasattr(item.ordem_servico, "id")
-            else item.ordem_servico_id
-        )
-        servico_id = (
-            item.servico.id if hasattr(item.servico, "id") else item.servico_id
-        )
-        return ordem_servico_id, servico_id, item.valor_cobrado
+        return item.id_ordem_servico, item.id_servico, item.valor_cobrado
 
     def get_all(self):
         return self._buscar()
@@ -93,9 +79,7 @@ class OrdemServicoServicoDAO(DAO):
     def delete(self, id):
         conexao, cursor = self.conectar()
         try:
-            cursor.execute(
-                "DELETE FROM ordem_servico_servicos WHERE id = %s", (id,)
-            )
+            cursor.execute("DELETE FROM ordem_servico_servicos WHERE id = %s", (id,))
             conexao.commit()
             return cursor.rowcount > 0
         except Exception:

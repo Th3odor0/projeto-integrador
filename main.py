@@ -1,12 +1,13 @@
 import tkinter as tk
 from app.core.database import Database
+from app.view.estilo_view import COR_FUNDO_JANELA
 
 # DAOs das entidades necessárias para Ordem de Serviço
-from app.dao.cliente_dao import Cliente_DAO
-from app.dao.funcionario_dao import Funcionario_DAO
+from app.dao.cliente_dao import ClienteDAO
+from app.dao.funcionario_dao import FuncionarioDAO
 from app.dao.equipamento_dao import EquipamentoDAO
-from app.dao.ordem_servico_dao import Ordem_servico_DAO
-from app.dao.ordem_servico_pecas_dao import Ordem_Servico_Peca_DAO
+from app.dao.ordem_servico_dao import OrdemServicoDAO
+from app.dao.ordem_servico_pecas_dao import OrdemServicoPecaDAO
 from app.dao.peca_dao import PecaDAO
 from app.dao.servico_dao import ServicoDAO
 from app.dao.ordem_servico_servico_dao import Ordem_servico_Servico_Dao
@@ -18,7 +19,6 @@ from app.controller.peca_controller import PecaController
 from app.controller.servico_controller import ServicoController
 from app.controller.equipamento_controller import EquipamentoController
 from app.controller.ordem_servico_servico_controller import Ordem_servico_Servico_Controller
-# Ajuste este caminho para onde você salvou o Ordem_Servico_Peca_Controller
 from app.controller.ordem_servico_pecas_controller import Ordem_Servico_Peca_Controller
 # View
 from app.view.menu_view import MenuPrincipal
@@ -31,8 +31,6 @@ from app.view.peca_view import Peca_View
 # Ordem_servico_Servico_View e Ordem_Servico_Peca_View são abertas de dentro
 # da própria Ordem_servico_View (botões "Serviços desta Ordem" / "Peças desta
 # Ordem"), então não precisam ser importadas nem abertas aqui.
-
-COR_FUNDO_JANELA = "#f4f6f9"
 
 
 class ErpApplication:
@@ -64,16 +62,16 @@ class ErpApplication:
 
     def _montar_daos_e_controllers(self):
         # DAOs independentes
-        self._dao_cliente = Cliente_DAO(self._database)
-        self._dao_funcionario = Funcionario_DAO(self._database)
+        self._dao_cliente = ClienteDAO(self._database)
+        self._dao_funcionario = FuncionarioDAO(self._database)
         self._dao_equipamento = EquipamentoDAO(self._database, self._dao_cliente)
         self._dao_peca = PecaDAO(self._database)
         self._dao_servico = ServicoDAO(self._database)
         self._dao_servico_servico = Ordem_servico_Servico_Dao(self._database)
-        self._dao_ordem_servico_peca = Ordem_Servico_Peca_DAO(self._database)
+        self._dao_ordem_servico_peca = OrdemServicoPecaDAO(self._database)
 
         # DAO principal, que depende dos DAOs acima
-        self._dao_ordem_servico = Ordem_servico_DAO(
+        self._dao_ordem_servico = OrdemServicoDAO(
             self._database, self._dao_cliente, self._dao_funcionario, self._dao_equipamento
         )
 
@@ -118,76 +116,46 @@ class ErpApplication:
     # Abertura das telas (janelas Toplevel)
     # ------------------------------------------------------------------
 
-    def _abrir_ordem_servico(self):
-        # Evita duplicar a abertura da mesma janela no Tkinter
-        if self._janela_ordem_servico is not None and self._janela_ordem_servico.winfo_exists():
-            self._janela_ordem_servico.lift()
-            self._janela_ordem_servico.focus_force()
+    def _abrir_janela(self, atributo, view_class, *args):
+        """
+        Abre a view indicada numa Toplevel nova, ou traz pra frente a
+        janela já aberta (guardada no atributo de instância 'atributo').
+        Elimina a repetição que existia em cada _abrir_* individual.
+        """
+        janela_existente = getattr(self, atributo)
+        if janela_existente is not None and janela_existente.winfo_exists():
+            janela_existente.lift()
+            janela_existente.focus_force()
             return
 
         janela = tk.Toplevel(self._root)
-        self._janela_ordem_servico = janela
-        Ordem_servico_View(
-            janela,
-            self._controller_ordem_servico,
-            self._dao_cliente,
-            self._dao_funcionario,
-            self._dao_equipamento,
-            self._controller_servico_servico,
-            self._dao_servico,
-            self._controller_ordem_servico_peca,
-            self._dao_peca,
+        setattr(self, atributo, janela)
+        view_class(janela, *args)
+
+    def _abrir_ordem_servico(self):
+        self._abrir_janela(
+            "_janela_ordem_servico", Ordem_servico_View,
+            self._controller_ordem_servico, self._dao_cliente, self._dao_funcionario,
+            self._dao_equipamento, self._controller_servico_servico, self._dao_servico,
+            self._controller_ordem_servico_peca, self._dao_peca,
         )
 
     def _abrir_cliente(self):
-        if self._janela_cliente is not None and self._janela_cliente.winfo_exists():
-            self._janela_cliente.lift()
-            self._janela_cliente.focus_force()
-            return
-
-        janela = tk.Toplevel(self._root)
-        self._janela_cliente = janela
-        Cliente_View(janela, self._controller_cliente)
+        self._abrir_janela("_janela_cliente", Cliente_View, self._controller_cliente)
 
     def _abrir_funcionario(self):
-        if self._janela_funcionario is not None and self._janela_funcionario.winfo_exists():
-            self._janela_funcionario.lift()
-            self._janela_funcionario.focus_force()
-            return
-
-        janela = tk.Toplevel(self._root)
-        self._janela_funcionario = janela
-        Funcionario_View(janela, self._controller_funcionario)
+        self._abrir_janela("_janela_funcionario", Funcionario_View, self._controller_funcionario)
 
     def _abrir_equipamento(self):
-        if self._janela_equipamento is not None and self._janela_equipamento.winfo_exists():
-            self._janela_equipamento.lift()
-            self._janela_equipamento.focus_force()
-            return
-
-        janela = tk.Toplevel(self._root)
-        self._janela_equipamento = janela
-        Equipamento_View(janela, self._controller_equipamento, self._dao_cliente)
+        self._abrir_janela(
+            "_janela_equipamento", Equipamento_View, self._controller_equipamento, self._dao_cliente
+        )
 
     def _abrir_servico(self):
-        if self._janela_servico is not None and self._janela_servico.winfo_exists():
-            self._janela_servico.lift()
-            self._janela_servico.focus_force()
-            return
-
-        janela = tk.Toplevel(self._root)
-        self._janela_servico = janela
-        Servico_View(janela, self._controller_servico)
+        self._abrir_janela("_janela_servico", Servico_View, self._controller_servico)
 
     def _abrir_peca(self):
-        if self._janela_peca is not None and self._janela_peca.winfo_exists():
-            self._janela_peca.lift()
-            self._janela_peca.focus_force()
-            return
-
-        janela = tk.Toplevel(self._root)
-        self._janela_peca = janela
-        Peca_View(janela, self._controller_peca)
+        self._abrir_janela("_janela_peca", Peca_View, self._controller_peca)
 
     def run(self):
         self._root.mainloop()

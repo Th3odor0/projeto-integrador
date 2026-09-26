@@ -1,14 +1,10 @@
-# Ajuste os imports abaixo conforme o caminho real dos seus arquivos no projeto
 from app.models.servico import Servico
 
 
 class ServicoController:
-    
 
     def __init__(self, servico_dao):
         self.dao = servico_dao
-
-   
 
     def _validar_dados(self, nome, descricao, valor_padrao):
         erros = []
@@ -27,10 +23,7 @@ class ServicoController:
 
         return erros
 
-    
-
     def cadastrar(self, nome, descricao, valor_padrao):
-        """Valida e cadastra um novo serviço. Retorna (sucesso, mensagem_ou_servico)."""
         erros = self._validar_dados(nome, descricao, valor_padrao)
         if erros:
             return False, "\n".join(erros)
@@ -44,7 +37,6 @@ class ServicoController:
             return False, f"Erro ao cadastrar serviço: {erro}"
 
     def atualizar(self, id, nome, descricao, valor_padrao):
-        """Valida e atualiza um serviço existente."""
         servico = self.dao.get_by_id(id)
         if servico is None:
             return False, "Serviço não encontrado."
@@ -64,7 +56,6 @@ class ServicoController:
             return False, f"Erro ao atualizar serviço: {erro}"
 
     def excluir(self, id):
-        """Exclui um serviço pelo ID."""
         if self.dao.get_by_id(id) is None:
             return False, "Serviço não encontrado."
 
@@ -79,5 +70,8 @@ class ServicoController:
     def buscar_por_id(self, id):
         return self.dao.get_by_id(id)
 
-    def listar_todos(self):
-        return self.dao.get_all()
+    def buscar_todos(self):
+        try:
+            return True, self.dao.get_all()
+        except Exception as erro:
+            return False, f"Erro ao buscar serviços: {erro}"

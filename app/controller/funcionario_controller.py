@@ -67,7 +67,7 @@ class FuncionarioController:
         except Exception as erro:
             return False, f"Erro ao atualizar funcionário: {erro}"
 
-    def deletar(self, id):
+    def excluir(self, id):
         funcionario = self.dao.get_by_id(id)
         if funcionario is None:
             return False, "Funcionário não encontrado."
@@ -88,7 +88,6 @@ class FuncionarioController:
 
     def buscar_todos(self):
         try:
-            funcionarios = self.dao.get_all()
-            return True, funcionarios
+            return True, self.dao.get_all()
         except Exception as erro:
             return False, f"Erro ao buscar funcionários: {erro}"

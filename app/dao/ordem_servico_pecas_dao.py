@@ -1,13 +1,21 @@
-from app.dao.dao import ConexaoMixin
 from app.models.pecas import Peca
 
 
-class OrdemServicoPecaDAO(ConexaoMixin):
+class OrdemServicoPecaDAO:
     def __init__(self, database):
-        super().__init__(database)
+        self.database = database
+
+    def _conectar(self):
+        conexao = self.database.conectar()
+        cursor = conexao.cursor()
+        return conexao, cursor
+
+    def _desconectar(self, cursor, conexao):
+        cursor.close()
+        conexao.close()
 
     def get_pecas_por_ordem_servico(self, ordem_servico):
-        conexao, cursor = self.conectar()
+        conexao, cursor = self._conectar()
         try:
             sql = """
                 SELECT
@@ -34,10 +42,10 @@ class OrdemServicoPecaDAO(ConexaoMixin):
                 pecas.append(peca)
             return pecas
         finally:
-            self.desconectar(cursor, conexao)
+            self._desconectar(cursor, conexao)
 
     def substituir_pecas_da_ordem_servico(self, ordem_servico, pecas):
-        conexao, cursor = self.conectar()
+        conexao, cursor = self._conectar()
         try:
             cursor.execute(
                 "DELETE FROM ordem_servico_pecas WHERE ordem_servico_id = %s",
@@ -65,4 +73,4 @@ class OrdemServicoPecaDAO(ConexaoMixin):
             conexao.rollback()
             raise
         finally:
-            self.desconectar(cursor, conexao)
+            self._desconectar(cursor, conexao)

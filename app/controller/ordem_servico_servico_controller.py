@@ -2,13 +2,6 @@ from app.models.ordem_servico_servico import Ordem_servico_servico
 
 
 class Ordem_servico_Servico_Controller:
-    """
-    Controller para vincular serviços prestados a uma Ordem de Serviço.
-
-    Segue a mesma convenção do Cliente_controller (usada por Cliente_view):
-    todo método público retorna (sucesso: bool, resultado) e nunca levanta
-    exceção pra fora — a view só precisa checar o booleano.
-    """
 
     def __init__(self, ordem_servico_servico_dao, servico_dao, ordem_servico_dao):
         self.dao = ordem_servico_servico_dao
@@ -16,11 +9,6 @@ class Ordem_servico_Servico_Controller:
         self.ordem_servico_dao = ordem_servico_dao
 
     def buscar_por_ordem(self, ordem_servico_id):
-        """
-        A view usa item.servico.nome pra montar a Treeview, mas a model só
-        guarda id_servico — então resolvemos o objeto Servico aqui e o
-        penduramos como atributo dinâmico antes de devolver.
-        """
         try:
             itens = self.dao.get_by_ordem_servico(ordem_servico_id)
         except Exception as erro:
@@ -60,7 +48,6 @@ class Ordem_servico_Servico_Controller:
             return False, f"Erro ao adicionar serviço: {erro}"
 
     def atualizar(self, id, valor_cobrado):
-        """Só o valor cobrado é editável — o serviço vinculado não muda depois de criado."""
         item = self.dao.get_by_id(id)
         if item is None:
             return False, "Item não encontrado."

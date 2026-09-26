@@ -9,10 +9,6 @@ class Ordem_servico_Controller:
         self.funcionario_dao = funcionario_dao
         self.equipamento_dao = equipamento_dao
 
-    # ------------------------------------------------------------------
-    # Validações reaproveitadas por cadastrar() e atualizar()
-    # ------------------------------------------------------------------
-
     @staticmethod
     def _validar_valor_total(valor_total):
         try:
@@ -27,7 +23,6 @@ class Ordem_servico_Controller:
 
     @staticmethod
     def _validar_dias_garantia(dias_garantia):
-        # Campo opcional: vazio vira 0
         if dias_garantia is None or str(dias_garantia).strip() == "":
             return 0
 
@@ -43,7 +38,6 @@ class Ordem_servico_Controller:
 
     @staticmethod
     def _validar_data_conclusao(data_conclusao_texto):
-        # Data de conclusão é opcional (OS ainda em andamento)
         if not data_conclusao_texto:
             return None
 
@@ -52,19 +46,28 @@ class Ordem_servico_Controller:
 
         return DataUtils.string_para_data(data_conclusao_texto)
 
-    # ------------------------------------------------------------------
-    # Operações
-    # ------------------------------------------------------------------
+    def _buscar_entidades_relacionadas(self, id_cliente, id_funcionario, id_equipamento):
+        """Busca cliente/funcionário/equipamento e garante que todos existem.
+        Usado tanto no cadastro quanto na atualização, já que agora esses
+        três campos são editáveis nos dois casos."""
+        cliente = self.cliente_dao.get_by_id(id_cliente)
+        if cliente is None:
+            raise ValueError(f"Cliente com id {id_cliente} não encontrado.")
+
+        funcionario = self.funcionario_dao.get_by_id(id_funcionario)
+        if funcionario is None:
+            raise ValueError(f"Funcionário com id {id_funcionario} não encontrado.")
+
+        equipamento = self.equipamento_dao.get_by_id(id_equipamento)
+        if equipamento is None:
+            raise ValueError(f"Equipamento com id {id_equipamento} não encontrado.")
+
+        return cliente, funcionario, equipamento
 
     def cadastrar(self, id_cliente, id_funcionario, id_equipamento, data_entrada_texto,
                   data_conclusao_texto, status, problema, diagnostico,
                   valor_total, forma_pagamento, dias_garantia):
-        """
-        Recebe dados "crus" vindos da tela (Tkinter), valida e converte,
-        monta o objeto Ordem_servico e delega o salvamento ao DAO.
-        """
 
-        # --- Validações básicas ---
         if not problema or not problema.strip():
             raise ValueError("O campo 'problema' é obrigatório.")
 
@@ -82,24 +85,13 @@ class Ordem_servico_Controller:
 
         data_entrada = DataUtils.string_para_data(data_entrada_texto)
 
-        # Conclusão não pode ser anterior à entrada
         if data_conclusao is not None and data_conclusao < data_entrada:
             raise ValueError("Data de conclusão não pode ser anterior à data de entrada.")
 
-        # --- Busca as entidades relacionadas (garante que existem) ---
-        cliente = self.cliente_dao.get_by_id(id_cliente)
-        if cliente is None:
-            raise ValueError(f"Cliente com id {id_cliente} não encontrado.")
+        cliente, funcionario, equipamento = self._buscar_entidades_relacionadas(
+            id_cliente, id_funcionario, id_equipamento
+        )
 
-        funcionario = self.funcionario_dao.get_by_id(id_funcionario)
-        if funcionario is None:
-            raise ValueError(f"Funcionário com id {id_funcionario} não encontrado.")
-
-        equipamento = self.equipamento_dao.get_by_id(id_equipamento)
-        if equipamento is None:
-            raise ValueError(f"Equipamento com id {id_equipamento} não encontrado.")
-
-        # --- Monta o objeto e delega ao DAO ---
         nova_ordem = Ordem_servico(
             id=None,
             data_entrada=data_entrada,
@@ -126,11 +118,13 @@ class Ordem_servico_Controller:
             raise ValueError(f"Ordem de serviço com id {id} não encontrada.")
         return ordem
 
-    def atualizar(self, id, status, data_conclusao_texto, problema, diagnostico,
+    def atualizar(self, id, id_cliente, id_funcionario, id_equipamento, status,
+                  data_conclusao_texto, problema, diagnostico,
                   valor_total, forma_pagamento, dias_garantia):
         """
-        Atualização parcial: busca a ordem existente, aplica os novos dados
-        e salva. Mantém cliente/funcionario/equipamento e a data de entrada originais.
+        Atualização da ordem. Cliente, funcionário e equipamento agora são
+        editáveis (deixaram de ser "campos imutáveis"); só a data de entrada
+        continua vindo da ordem original — ver 'nova_entrada' abaixo.
         """
         ordem = self.buscar_por_id(id)
 
@@ -141,15 +135,16 @@ class Ordem_servico_Controller:
         valor_total = self._validar_valor_total(valor_total)
         dias_garantia = self._validar_dias_garantia(dias_garantia)
 
-        # ordem.data_entrada já é um date (veio do banco) — NÃO passar por
-        # string_para_data de novo, que espera uma string "dd/mm/aaaa" e
-        # quebraria com um objeto date.
         data_entrada = ordem.data_entrada
         if data_conclusao is not None and data_entrada is not None and data_conclusao < data_entrada:
             raise ValueError("Data de conclusão não pode ser anterior à data de entrada.")
 
+        cliente, funcionario, equipamento = self._buscar_entidades_relacionadas(
+            id_cliente, id_funcionario, id_equipamento
+        )
+
         ordem.atualizar_dados(
-            nova_entrada=ordem.data_entrada,   # mantém a data original de entrada
+            nova_entrada=ordem.data_entrada,
             nova_conclusao=data_conclusao,
             novo_status=status,
             novo_problema=problema,
@@ -158,10 +153,13 @@ class Ordem_servico_Controller:
             novo_pagamento=forma_pagamento,
             nova_garantia=dias_garantia
         )
+        # atualizar_dados não cobre cliente/funcionario/equipamento
+        ordem.cliente = cliente
+        ordem.funcionario = funcionario
+        ordem.equipamento = equipamento
 
         return self.ordem_servico_dao.update(ordem)
 
     def excluir(self, id):
-        # Garante que existe antes de tentar excluir (evita exclusão silenciosa de algo inexistente)
         self.buscar_por_id(id)
         self.ordem_servico_dao.delete(id)

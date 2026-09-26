@@ -5,7 +5,7 @@ class Servico:
         self._descricao = descricao
         self._valor_padrao = valor_padrao
 
-    def atualiazar_dados(self, novo_nome, nova_descricao, novo_valor):
+    def atualizar_dados(self, novo_nome, nova_descricao, novo_valor):
         self._nome = novo_nome
         self._descricao = nova_descricao
         self._valor_padrao = novo_valor
@@ -37,4 +37,3 @@ class Servico:
     @valor_padrao.setter
     def valor_padrao(self, novo_valor):
         self._valor_padrao = novo_valor
-

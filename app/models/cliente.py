@@ -46,5 +46,3 @@ class Cliente:
     @email.setter
     def email(self, novo_email):
         self._email = novo_email
-        
-    

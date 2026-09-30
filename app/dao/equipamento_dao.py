@@ -4,23 +4,34 @@ from app.models.equipamento import Equipamento
 
 class EquipamentoDAO(DAO):
     """
-    Não vira SimpleDAO porque cada Equipamento carrega o Cliente inteiro
-    (não só o id) — é preciso consultar o ClienteDAO pra montar o objeto.
+    Equipamento guarda só o ID do cliente (coluna equipamentos.cliente_id).
+    Antes, o DAO montava o objeto com o Cliente inteiro em `id_cliente` mas
+    save/update esperavam um int nesse mesmo atributo: se algum caminho
+    chamasse update() sem reatribuir o id, o MySQL receberia um objeto Cliente
+    como parâmetro e falharia. Agora o atributo é sempre um int.
+
+    O parâmetro cliente_dao continua no construtor só para não mudar o
+    main.py; a tela resolve o nome do cliente pelo combobox.
     """
 
-    def __init__(self, database, cliente_dao):
+    MSG_EM_USO = (
+        "Não é possível excluir: este equipamento está vinculado a "
+        "ordens de serviço."
+    )
+
+    def __init__(self, database, cliente_dao=None):
         super().__init__(database)
         self._cliente_dao = cliente_dao
 
-    def _montar_objeto(self, registro):
-        cliente = self._cliente_dao.get_by_id(registro[5])
+    @staticmethod
+    def _montar_objeto(registro):
         return Equipamento(
             id=registro[0],
             tipo=registro[1],
             marca=registro[2],
             modelo=registro[3],
             numero_serie=registro[4],
-            cliente_id=cliente,
+            cliente_id=registro[5],
         )
 
     def save(self, equipamento):
@@ -111,8 +122,10 @@ class EquipamentoDAO(DAO):
             cursor.execute("DELETE FROM equipamentos WHERE id = %s", (id,))
             conexao.commit()
             return cursor.rowcount > 0
-        except Exception:
+        except Exception as erro:
             conexao.rollback()
+            if self._violacao_fk(erro):
+                raise ValueError(self.MSG_EM_USO) from erro
             raise
         finally:
             self.desconectar(cursor, conexao)

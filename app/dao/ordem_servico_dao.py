@@ -106,8 +106,25 @@ class OrdemServicoDAO(DAO):
             self.desconectar(cursor, conexao)
 
     def delete(self, id):
+        """
+        Exclui a ordem e devolve ao estoque as peças que ela tinha reservado
+        (a FK ON DELETE CASCADE apagaria as linhas de ordem_servico_pecas sem
+        devolver nada). Tudo na mesma transação.
+        """
         conexao, cursor = self.conectar()
         try:
+            cursor.execute(
+                "SELECT peca_id, quantidade FROM ordem_servico_pecas "
+                "WHERE ordem_servico_id = %s FOR UPDATE",
+                (id,),
+            )
+            for peca_id, quantidade in sorted(cursor.fetchall()):
+                cursor.execute(
+                    "UPDATE pecas SET quantidade_estoque = quantidade_estoque + %s "
+                    "WHERE id = %s",
+                    (quantidade, peca_id),
+                )
+
             cursor.execute("DELETE FROM ordens_servico WHERE id = %s", (id,))
             conexao.commit()
             return cursor.rowcount > 0

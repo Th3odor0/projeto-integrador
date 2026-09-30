@@ -1,3 +1,4 @@
+import traceback
 import tkinter as tk
 from tkinter import ttk, messagebox
 
@@ -16,21 +17,22 @@ class CrudViewBase(tk.Frame):
       - uma tupla (chave, rotulo)                          -> campo de texto
       - um dict com chave/rotulo/tipo="combo"/...          -> campo relacional
 
+    IMPORTANTE: 'chave' precisa ser, ao mesmo tempo,
+      1) o nome de um atributo do model (usado com getattr para listar), e
+      2) o nome de um parâmetro de controller.cadastrar / controller.atualizar.
+    Se a chave não existir no model, a tela quebra ao carregar a lista.
+
     Um campo "combo" precisa de:
         chave:            atributo do objeto onde mora o valor relacionado
-                           (ex.: "id_cliente" -- no seu Equipamento, esse
-                           atributo já guarda o objeto Cliente inteiro)
+                           (pode guardar o objeto inteiro OU só o id — os dois
+                           casos são tratados por _texto_combo)
         rotulo:           texto do label
         tipo:             "combo"
         carregar_opcoes:  função (self) -> lista de objetos disponíveis
-                           (ex.: lambda self: self.cliente_dao.get_all())
         texto_opcao:      função (objeto) -> string mostrada no combobox e
-                           na coluna da Treeview (ex.: lambda c: f"{c.id} - {c.nome}")
+                           na coluna da Treeview
 
-    Isso já cobre UM campo relacional (o caso do Equipamento). Duas ou mais
-    comboboxes interdependentes, abas, ou sub-cadastro dentro da mesma tela
-    (o caso da Ordem de Serviço) não devem tentar caber aqui -- ver o
-    comentário no fim do arquivo.
+    Ordem de Serviço NÃO herda daqui (3 combos + abas + sub-cadastros).
     """
 
     TITULO = ""
@@ -46,12 +48,23 @@ class CrudViewBase(tk.Frame):
         self.entradas = {}
         self.combos = {}
         self._opcoes_combo = {}
+        self._objetos = {}  # iid da Treeview -> objeto do model
 
         configurar_janela(self.master, self.TITULO)
         self._criar_widgets()
-        self._carregar_opcoes_combos()
-        self._carregar_lista()
+        # Empacota ANTES de carregar os dados: se o carregamento falhar, a
+        # janela continua montada e o erro aparece na tela (não em branco).
         self.pack(fill=tk.BOTH, expand=True)
+        try:
+            self._carregar_opcoes_combos()
+            self._carregar_lista()
+        except Exception as erro:
+            traceback.print_exc()
+            messagebox.showerror(
+                "Erro ao carregar a tela",
+                f"{type(erro).__name__}: {erro}",
+                parent=self.master,
+            )
 
     # ------------------------------------------------------------------
     # Normalização dos campos (texto vs. combo)
@@ -154,27 +167,41 @@ class CrudViewBase(tk.Frame):
             self._opcoes_combo[campo["chave"]] = dict(zip(textos, opcoes))
             self.combos[campo["chave"]]["values"] = textos
 
+    def _texto_combo(self, campo, bruto):
+        """
+        Texto do combo para o valor guardado no model. Aceita tanto o objeto
+        relacionado (com .id) quanto só o id inteiro — o model Equipamento
+        hoje guarda o id, mas o DAO pode devolver o objeto.
+        """
+        if bruto is None or bruto == "":
+            return ""
+        id_ref = getattr(bruto, "id", bruto)
+        for opcao in self._opcoes_combo.get(campo["chave"], {}).values():
+            if opcao.id == id_ref:
+                return campo["texto_opcao"](opcao)
+        return ""
+
     # ------------------------------------------------------------------
     # Dados <-> formulário
     # ------------------------------------------------------------------
 
     def _selecionar(self, event):
-        selecionado = self.tree.focus()
-        if not selecionado:
-            return
-        valores = self.tree.item(selecionado, "values")
-        if not valores:
+        # Lê do objeto guardado (e não dos valores da Treeview): o Tkinter
+        # converte "01234567890" em número e perderia o zero à esquerda do
+        # CPF / código.
+        objeto = self._objetos.get(self.tree.focus())
+        if objeto is None:
             return
 
-        self._set_id(valores[0])
-        campos = self._campos_normalizados
-        for campo, valor in zip(campos, valores[1:]):
+        self._set_id(objeto.id)
+        for campo in self._campos_normalizados:
+            bruto = getattr(objeto, campo["chave"], None)
             if campo["tipo"] == "combo":
-                self.combos[campo["chave"]].set(valor)
+                self.combos[campo["chave"]].set(self._texto_combo(campo, bruto))
             else:
                 entry = self.entradas[campo["chave"]]
                 entry.delete(0, tk.END)
-                entry.insert(0, valor)
+                entry.insert(0, "" if bruto is None else str(bruto))
 
     def _set_id(self, valor):
         self.entry_id.config(state="normal")
@@ -213,8 +240,8 @@ class CrudViewBase(tk.Frame):
     # ------------------------------------------------------------------
 
     def _carregar_lista(self):
-        for item in self.tree.get_children():
-            self.tree.delete(item)
+        self.tree.delete(*self.tree.get_children())
+        self._objetos.clear()
 
         sucesso, resultado = self.controller.buscar_todos()
         if not sucesso:
@@ -227,10 +254,12 @@ class CrudViewBase(tk.Frame):
             for campo in campos:
                 bruto = getattr(objeto, campo["chave"])
                 if campo["tipo"] == "combo":
-                    valores.append(campo["texto_opcao"](bruto) if bruto else "")
+                    valores.append(self._texto_combo(campo, bruto))
                 else:
-                    valores.append(bruto)
-            self.tree.insert("", "end", values=valores)
+                    valores.append("" if bruto is None else bruto)
+            iid = str(objeto.id)
+            self._objetos[iid] = objeto
+            self.tree.insert("", "end", iid=iid, values=valores)
 
     def _salvar(self):
         sucesso, resultado = self.controller.cadastrar(**self._coletar_campos())
@@ -261,8 +290,3 @@ class CrudViewBase(tk.Frame):
             self._carregar_opcoes_combos()
         else:
             messagebox.showerror("Erro", resultado)
-
-# Sobre Ordem de Serviço: propositalmente NÃO herda daqui. Teria 3 comboboxes
-# (cliente/funcionário/equipamento) + abas de Serviços/Peças com sub-cadastro
-# embutido + total calculado -- forçar isso aqui tornaria a base tão cheia de
-# casos especiais quanto a view dedicada que já existe, só que mais confusa.

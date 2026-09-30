@@ -385,7 +385,7 @@ class Ordem_servico_View(tk.Frame):
 
     def _preencher_valor_padrao_peca(self, e=None):
         if p := next((x for x in self.pecas_disp if x.id == self._extrair_id_combo(self.combo_peca_aba.get())), None):
-            self.entry_valor_unitario_peca_aba.delete(0, tk.END); self.entry_valor_unitario_peca_aba.insert(0, f"{p.valor:.2f}")
+            self.entry_valor_unitario_peca_aba.delete(0, tk.END); self.entry_valor_unitario_peca_aba.insert(0, f"{p.preco_venda:.2f}")
             self.entry_quantidade_peca_aba.delete(0, tk.END); self.entry_quantidade_peca_aba.insert(0, "1")
 
     def _selecionar_peca_da_aba(self, e=None):

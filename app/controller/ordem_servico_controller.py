@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from app.models.ordem_servico import Ordem_servico
 from app.core.dataUltils import DataUtils
 
@@ -8,6 +10,17 @@ class Ordem_servico_Controller:
         self.cliente_dao = cliente_dao
         self.funcionario_dao = funcionario_dao
         self.equipamento_dao = equipamento_dao
+
+    @staticmethod
+    def _so_data(valor):
+        """
+        As colunas data_entrada / data_conclusao são DATETIME no banco, mas a
+        tela trabalha com datas (dd/mm/aaaa). Comparar date com datetime dá
+        TypeError, então normalizamos tudo para date antes de comparar.
+        """
+        if isinstance(valor, datetime):
+            return valor.date()
+        return valor
 
     @staticmethod
     def _validar_valor_total(valor_total):
@@ -46,10 +59,23 @@ class Ordem_servico_Controller:
 
         return DataUtils.string_para_data(data_conclusao_texto)
 
+    def _checar_datas(self, data_entrada, data_conclusao):
+        if data_conclusao is None or data_entrada is None:
+            return
+        if self._so_data(data_conclusao) < self._so_data(data_entrada):
+            raise ValueError("Data de conclusão não pode ser anterior à data de entrada.")
+
     def _buscar_entidades_relacionadas(self, id_cliente, id_funcionario, id_equipamento):
         """Busca cliente/funcionário/equipamento e garante que todos existem.
-        Usado tanto no cadastro quanto na atualização, já que agora esses
-        três campos são editáveis nos dois casos."""
+        As três colunas (cliente_id, funcionario_id, equipamento_id) são
+        NOT NULL no banco, então id vazio também é erro aqui."""
+        if id_cliente is None:
+            raise ValueError("Selecione o cliente.")
+        if id_funcionario is None:
+            raise ValueError("Selecione o funcionário.")
+        if id_equipamento is None:
+            raise ValueError("Selecione o equipamento.")
+
         cliente = self.cliente_dao.get_by_id(id_cliente)
         if cliente is None:
             raise ValueError(f"Cliente com id {id_cliente} não encontrado.")
@@ -71,6 +97,10 @@ class Ordem_servico_Controller:
         if not problema or not problema.strip():
             raise ValueError("O campo 'problema' é obrigatório.")
 
+        # coluna `problema` é VARCHAR(255)
+        if len(problema.strip()) > 255:
+            raise ValueError("O problema deve ter no máximo 255 caracteres.")
+
         if not data_entrada_texto or not str(data_entrada_texto).strip():
             raise ValueError("A data de entrada é obrigatória.")
 
@@ -84,9 +114,7 @@ class Ordem_servico_Controller:
         dias_garantia = self._validar_dias_garantia(dias_garantia)
 
         data_entrada = DataUtils.string_para_data(data_entrada_texto)
-
-        if data_conclusao is not None and data_conclusao < data_entrada:
-            raise ValueError("Data de conclusão não pode ser anterior à data de entrada.")
+        self._checar_datas(data_entrada, data_conclusao)
 
         cliente, funcionario, equipamento = self._buscar_entidades_relacionadas(
             id_cliente, id_funcionario, id_equipamento
@@ -97,7 +125,7 @@ class Ordem_servico_Controller:
             data_entrada=data_entrada,
             data_conclusao=data_conclusao,
             status=status,
-            problema=problema,
+            problema=problema.strip(),
             diagnostico=diagnostico,
             valor_total=valor_total,
             forma_pagamento=forma_pagamento,
@@ -122,22 +150,22 @@ class Ordem_servico_Controller:
                   data_conclusao_texto, problema, diagnostico,
                   valor_total, forma_pagamento, dias_garantia):
         """
-        Atualização da ordem. Cliente, funcionário e equipamento agora são
-        editáveis (deixaram de ser "campos imutáveis"); só a data de entrada
-        continua vindo da ordem original — ver 'nova_entrada' abaixo.
+        Atualização da ordem. Cliente, funcionário e equipamento são editáveis;
+        só a data de entrada continua vindo da ordem original.
         """
         ordem = self.buscar_por_id(id)
 
         if not problema or not problema.strip():
             raise ValueError("O campo 'problema' é obrigatório.")
 
+        if len(problema.strip()) > 255:
+            raise ValueError("O problema deve ter no máximo 255 caracteres.")
+
         data_conclusao = self._validar_data_conclusao(data_conclusao_texto)
         valor_total = self._validar_valor_total(valor_total)
         dias_garantia = self._validar_dias_garantia(dias_garantia)
 
-        data_entrada = ordem.data_entrada
-        if data_conclusao is not None and data_entrada is not None and data_conclusao < data_entrada:
-            raise ValueError("Data de conclusão não pode ser anterior à data de entrada.")
+        self._checar_datas(ordem.data_entrada, data_conclusao)
 
         cliente, funcionario, equipamento = self._buscar_entidades_relacionadas(
             id_cliente, id_funcionario, id_equipamento
@@ -147,7 +175,7 @@ class Ordem_servico_Controller:
             nova_entrada=ordem.data_entrada,
             nova_conclusao=data_conclusao,
             novo_status=status,
-            novo_problema=problema,
+            novo_problema=problema.strip(),
             novo_diagnostico=diagnostico,
             novo_valor=valor_total,
             novo_pagamento=forma_pagamento,

@@ -96,28 +96,6 @@ class PecaController:
         except Exception as erro:
             return False, f"Erro ao buscar peças: {erro}"
 
-    def dar_baixa_estoque(self, id, quantidade_utilizada):
-        """Reduz a quantidade em estoque, usado quando a peça é aplicada numa ordem de serviço."""
-        peca = self.dao.get_by_id(id)
-        if peca is None:
-            return False, "Peça não encontrada."
-
-        try:
-            quantidade_utilizada = int(quantidade_utilizada)
-        except (TypeError, ValueError):
-            return False, "Quantidade inválida."
-
-        if quantidade_utilizada <= 0:
-            return False, "A quantidade utilizada deve ser maior que zero."
-
-        if quantidade_utilizada > peca.quantidade_estoque:
-            return False, "Estoque insuficiente para essa quantidade."
-
-        nova_quantidade = peca.quantidade_estoque - quantidade_utilizada
-        peca.atualizar_dados(peca.nome, peca.codigo, nova_quantidade, peca.preco_venda)
-
-        try:
-            self.dao.update(peca)
-            return True, f"Baixa de estoque realizada. Restam {nova_quantidade} unidades."
-        except Exception as erro:
-            return False, f"Erro ao atualizar estoque: {erro}"
+    # dar_baixa_estoque foi removido: o estoque agora é ajustado dentro da
+    # transação de OrdemServicoPecaDAO.substituir_pecas_da_ordem_servico
+    # (ler, calcular e gravar aqui dava erro quando dois acessos ocorriam juntos).

@@ -4,15 +4,16 @@ class Cliente_View(CrudViewBase):
     TITULO = "Clientes"
     SUBTITULO = "Cadastro de clientes"
     MODULO = "cliente"
+    # chaves = atributos do model Cliente = colunas de `clientes`
     CAMPOS = [
         ("nome", "Nome:"),
-        ("email", "Email:"),
+        ("cpf", "CPF:"),
         ("telefone", "Telefone:"),
-        ("endereco", "Endereço:"),
+        ("email", "Email:"),
     ]
     COLUNAS_LARGURA = {
-        "nome": 200,
-        "email": 200,
-        "telefone": 150,
-        "endereco": 300,
+        "nome": 220,
+        "cpf": 130,
+        "telefone": 130,
+        "email": 220,
     }

@@ -11,8 +11,7 @@ class OrdemServicoPecaDAO:
         return conexao, cursor
 
     def _desconectar(self, cursor, conexao):
-        cursor.close()
-        conexao.close()
+        self.database.desconectar(cursor, conexao)
 
     def get_pecas_por_ordem_servico(self, ordem_servico):
         conexao, cursor = self._conectar()
@@ -45,8 +44,49 @@ class OrdemServicoPecaDAO:
             self._desconectar(cursor, conexao)
 
     def substituir_pecas_da_ordem_servico(self, ordem_servico, pecas):
+        """
+        Grava a lista de peças da ordem E acerta o estoque, tudo na mesma
+        transação: ou salva tudo, ou não muda nada.
+
+        O estoque é ajustado pela DIFERENÇA entre o que a ordem já tinha e o
+        que está sendo salvo agora:
+          - peça nova ou quantidade maior  -> sai do estoque a diferença
+          - peça removida ou quantidade menor -> a diferença volta ao estoque
+        O UPDATE é feito no próprio banco, com a condição estoque >= 0, então
+        duas ordens salvando ao mesmo tempo não conseguem vender a mesma peça
+        duas vezes.
+        """
         conexao, cursor = self._conectar()
         try:
+            # o que a ordem já reservou (trava essas linhas até o commit)
+            cursor.execute(
+                "SELECT peca_id, quantidade FROM ordem_servico_pecas "
+                "WHERE ordem_servico_id = %s FOR UPDATE",
+                (ordem_servico.id,),
+            )
+            antigas = {peca_id: quantidade for peca_id, quantidade in cursor.fetchall()}
+
+            novas = {}
+            nomes = {}
+            for peca in pecas:
+                quantidade = peca.quantidade_os
+                novas[peca.id] = 1 if quantidade is None else quantidade
+                nomes[peca.id] = peca.nome
+
+            # ordem fixa de peça: evita deadlock entre duas ordens salvando juntas
+            for peca_id in sorted(set(antigas) | set(novas)):
+                diferenca = novas.get(peca_id, 0) - antigas.get(peca_id, 0)
+                if diferenca == 0:
+                    continue
+                cursor.execute(
+                    "UPDATE pecas SET quantidade_estoque = quantidade_estoque - %s "
+                    "WHERE id = %s AND quantidade_estoque - %s >= 0",
+                    (diferenca, peca_id, diferenca),
+                )
+                if cursor.rowcount == 0:
+                    nome = nomes.get(peca_id, f"id {peca_id}")
+                    raise ValueError(f"Estoque insuficiente para a peça '{nome}'.")
+
             cursor.execute(
                 "DELETE FROM ordem_servico_pecas WHERE ordem_servico_id = %s",
                 (ordem_servico.id,),
@@ -58,15 +98,11 @@ class OrdemServicoPecaDAO:
                 VALUES (%s, %s, %s, %s)
             """
             for peca in pecas:
-                cursor.execute(
-                    sql_insert,
-                    (
-                        ordem_servico.id,
-                        peca.id,
-                        getattr(peca, "quantidade_os", 1),
-                        getattr(peca, "valor_unitario_os", peca.preco_venda),
-                    ),
-                )
+                # Peca declara quantidade_os / valor_unitario_os como None,
+                # então getattr(..., padrão) não serve mais: trata None aqui.
+                quantidade = 1 if peca.quantidade_os is None else peca.quantidade_os
+                valor = peca.preco_venda if peca.valor_unitario_os is None else peca.valor_unitario_os
+                cursor.execute(sql_insert, (ordem_servico.id, peca.id, quantidade, valor))
 
             conexao.commit()
         except Exception:

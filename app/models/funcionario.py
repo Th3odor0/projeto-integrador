@@ -1,11 +1,9 @@
 class Funcionario:
     def __init__(self, id, nome, cpf, cargo):
-        
         self._id = id
         self._nome = nome
         self._cpf = cpf
         self._cargo = cargo
-
 
     def atualizar_dados(self, novo_nome, novo_cpf, novo_cargo):
         self._nome = novo_nome
@@ -16,7 +14,7 @@ class Funcionario:
     def id(self):
         return self._id
     @id.setter
-    def id (self, novo_id):
+    def id(self, novo_id):
         self._id = novo_id
 
     @property
@@ -27,11 +25,11 @@ class Funcionario:
         self._nome = novo_nome
 
     @property
-    def cpf(Self):
-        return Self._cpf
+    def cpf(self):
+        return self._cpf
     @cpf.setter
-    def cpf(Self, novo_cpf):
-        Self._cpf = novo_cpf
+    def cpf(self, novo_cpf):
+        self._cpf = novo_cpf
 
     @property
     def cargo(self):

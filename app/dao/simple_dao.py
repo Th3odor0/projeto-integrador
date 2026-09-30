@@ -21,6 +21,11 @@ class SimpleDAO(DAO):
     os valores de fato variáveis (nome, cpf, etc.) continuam indo via `%s`.
     """
 
+    MSG_EM_USO = (
+        "Não é possível excluir: este registro está sendo usado em "
+        "ordens de serviço ou em outros cadastros."
+    )
+
     def __init__(self, database, tabela, colunas, construtor, para_tupla):
         super().__init__(database)
         self._tabela = tabela
@@ -94,8 +99,10 @@ class SimpleDAO(DAO):
             cursor.execute(sql, (id,))
             conexao.commit()
             return cursor.rowcount > 0
-        except Exception:
+        except Exception as erro:
             conexao.rollback()
+            if self._violacao_fk(erro):
+                raise ValueError(self.MSG_EM_USO) from erro
             raise
         finally:
             self.desconectar(cursor, conexao)

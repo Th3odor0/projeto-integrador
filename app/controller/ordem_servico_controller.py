@@ -1,3 +1,4 @@
+from app.core.idioma import t
 from app.models.ordem_servico import Ordem_servico
 from app.core.dataUltils import DataUtils
 
@@ -18,10 +19,10 @@ class Ordem_servico_Controller:
         try:
             valor_total = float(valor_total)
         except (TypeError, ValueError):
-            raise ValueError("Valor total precisa ser um número.")
+            raise ValueError(t("Valor total precisa ser um número."))
 
         if valor_total < 0:
-            raise ValueError("Valor total não pode ser negativo.")
+            raise ValueError(t("Valor total não pode ser negativo."))
 
         return valor_total
 
@@ -34,10 +35,10 @@ class Ordem_servico_Controller:
         try:
             dias_garantia = int(dias_garantia)
         except (TypeError, ValueError):
-            raise ValueError("Dias de garantia precisa ser um número inteiro.")
+            raise ValueError(t("Dias de garantia precisa ser um número inteiro."))
 
         if dias_garantia < 0:
-            raise ValueError("Dias de garantia não pode ser negativo.")
+            raise ValueError(t("Dias de garantia não pode ser negativo."))
 
         return dias_garantia
 
@@ -48,7 +49,7 @@ class Ordem_servico_Controller:
             return None
 
         if not DataUtils.validar_data(data_conclusao_texto):
-            raise ValueError("Data de conclusão inválida. Use o formato dd/mm/aaaa.")
+            raise ValueError(t("Data de conclusão inválida. Use o formato dd/mm/aaaa."))
 
         return DataUtils.string_para_data(data_conclusao_texto)
 
@@ -66,14 +67,14 @@ class Ordem_servico_Controller:
 
         # --- Validações básicas ---
         if not problema or not problema.strip():
-            raise ValueError("O campo 'problema' é obrigatório.")
+            raise ValueError(t("O campo 'problema' é obrigatório."))
 
         if not data_entrada_texto or not str(data_entrada_texto).strip():
-            raise ValueError("A data de entrada é obrigatória.")
+            raise ValueError(t("A data de entrada é obrigatória."))
 
         if not DataUtils.validar_data(data_entrada_texto):
             raise ValueError(
-                f"Data de entrada inválida: {data_entrada_texto!r}. Use o formato dd/mm/aaaa."
+                t("Data de entrada inválida: {data}. Use o formato dd/mm/aaaa.", data=repr(data_entrada_texto))
             )
 
         data_conclusao = self._validar_data_conclusao(data_conclusao_texto)
@@ -84,20 +85,20 @@ class Ordem_servico_Controller:
 
         # Conclusão não pode ser anterior à entrada
         if data_conclusao is not None and data_conclusao < data_entrada:
-            raise ValueError("Data de conclusão não pode ser anterior à data de entrada.")
+            raise ValueError(t("Data de conclusão não pode ser anterior à data de entrada."))
 
         # --- Busca as entidades relacionadas (garante que existem) ---
         cliente = self.cliente_dao.get_by_id(id_cliente)
         if cliente is None:
-            raise ValueError(f"Cliente com id {id_cliente} não encontrado.")
+            raise ValueError(t("Cliente com id {id} não encontrado.", id=id_cliente))
 
         funcionario = self.funcionario_dao.get_by_id(id_funcionario)
         if funcionario is None:
-            raise ValueError(f"Funcionário com id {id_funcionario} não encontrado.")
+            raise ValueError(t("Funcionário com id {id} não encontrado.", id=id_funcionario))
 
         equipamento = self.equipamento_dao.get_by_id(id_equipamento)
         if equipamento is None:
-            raise ValueError(f"Equipamento com id {id_equipamento} não encontrado.")
+            raise ValueError(t("Equipamento com id {id} não encontrado.", id=id_equipamento))
 
         # --- Monta o objeto e delega ao DAO ---
         nova_ordem = Ordem_servico(
@@ -123,7 +124,7 @@ class Ordem_servico_Controller:
     def buscar_por_id(self, id):
         ordem = self.ordem_servico_dao.get_by_id(id)
         if ordem is None:
-            raise ValueError(f"Ordem de serviço com id {id} não encontrada.")
+            raise ValueError(t("Ordem de serviço com id {id} não encontrada.", id=id))
         return ordem
 
     def atualizar(self, id, status, data_conclusao_texto, problema, diagnostico,
@@ -135,7 +136,7 @@ class Ordem_servico_Controller:
         ordem = self.buscar_por_id(id)
 
         if not problema or not problema.strip():
-            raise ValueError("O campo 'problema' é obrigatório.")
+            raise ValueError(t("O campo 'problema' é obrigatório."))
 
         data_conclusao = self._validar_data_conclusao(data_conclusao_texto)
         valor_total = self._validar_valor_total(valor_total)
@@ -143,7 +144,7 @@ class Ordem_servico_Controller:
 
         data_entrada = DataUtils.string_para_data(ordem.data_entrada)
         if data_conclusao is not None and data_entrada is not None and data_conclusao < data_entrada:
-            raise ValueError("Data de conclusão não pode ser anterior à data de entrada.")
+            raise ValueError(t("Data de conclusão não pode ser anterior à data de entrada."))
 
         ordem.atualizar_dados(
             nova_entrada=ordem.data_entrada,   # mantém a data original de entrada

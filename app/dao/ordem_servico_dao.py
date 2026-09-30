@@ -66,20 +66,20 @@ class Ordem_servico_DAO(DAO):
         try:
             sql = """
                     SELECT
-                        id,
-                        cliente_id,
-                        funcionario_id,
-                        equipamento_id,
-                        data_entrada,
-                        data_conclusao,
-                        status,
-                        problema,
-                        diagnostico,
-                        valor_total,
-                        forma_pagamento,
-                        dias_garantia
+                        os.id,
+                        e.cliente_id,
+                        os.funcionario_id,
+                        os.equipamento_id,
+                        os.data_entrada,
+                        os.data_conclusao,
+                        os.status_id,
+                        os.problema,
+                        os.diagnostico,
+                        os.valor
                     FROM
-                        ordens_servico
+                        ordens_servico os
+                    INNER JOIN
+                        equipamentos e ON os.equipamento_id = e.id
                   """
             cursor.execute(sql)
             resultados = cursor.fetchall()
@@ -96,9 +96,7 @@ class Ordem_servico_DAO(DAO):
                     status=resultado[6],
                     problema=resultado[7],
                     diagnostico=resultado[8],
-                    valor_total=resultado[9],
-                    forma_pagamento=resultado[10],
-                    dias_garantia=resultado[11]
+                    valor_total=resultado[9]
                 )
                 ordens_servico.append(ordem_servico)
 

@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 from app.core.dataUltils import DataUtils
+from app.core.idioma import t
 from app.view.estilo_view import (
     COR_FUNDO_JANELA, COR_TITULO, COR_SUBTITULO, CORES_MODULOS,
     FONTE_LABEL, FONTE_LABEL_NEGRITO,
@@ -44,6 +45,17 @@ class Ordem_servico_View(tk.Frame):
     IMPORTANTE (datas): tudo que entra ou sai dos campos de texto passa por
     DataUtils. O banco devolve objetos date, e str(date) produz "aaaa-mm-dd",
     formato que o controller rejeita. Nunca use str() direto numa data aqui.
+
+    IMPORTANTE (idiomas):
+      - Constantes de classe (STATUS_OPCOES, CAMPOS_TEXTO) guardam o texto em
+        PORTUGUÊS e NÃO chamam t(): elas são avaliadas uma vez, na importação,
+        e congelariam o idioma daquele momento. A tradução acontece só na hora
+        de desenhar a tela.
+      - Os status ("aberta", "em andamento"...) são os valores canônicos gravados
+        no banco. O combobox mostra t(status), mas o que vai para o controller é
+        sempre o valor canônico (ver _status_para_canonico).
+      - _exibir_mensagem já passa título e mensagem por t(). Mensagens que vêm
+        dos controllers são traduzidas se existir a chave no idioma.py.
     """
 
     STATUS_OPCOES = ["aberta", "em andamento", "concluida", "cancelada"]
@@ -84,11 +96,11 @@ class Ordem_servico_View(tk.Frame):
         self.combos = {}
         self.entradas = {}
 
-        configurar_janela(self.master, "Ordens de Serviço")
+        configurar_janela(self.master, t("Ordens de Serviço"))
         self._estilo_tabela = aplicar_tema_widgets()
 
         criar_cabecalho(
-            self, "Ordens de Serviço", "Abrir, acompanhar e concluir atendimentos",
+            self, t("Ordens de Serviço"), t("Abrir, acompanhar e concluir atendimentos"),
             cor_destaque=CORES_MODULOS["ordem_servico"],
         )
 
@@ -99,9 +111,9 @@ class Ordem_servico_View(tk.Frame):
         self.aba_dados = ttk.Frame(self.notebook)
         self.aba_servicos = ttk.Frame(self.notebook)
         self.aba_pecas = ttk.Frame(self.notebook)
-        self.notebook.add(self.aba_dados, text="Dados da Ordem")
-        self.notebook.add(self.aba_servicos, text="Serviços Prestados")
-        self.notebook.add(self.aba_pecas, text="Peças Utilizadas")
+        self.notebook.add(self.aba_dados, text=t("Dados da Ordem"))
+        self.notebook.add(self.aba_servicos, text=t("Serviços Prestados"))
+        self.notebook.add(self.aba_pecas, text=t("Peças Utilizadas"))
         self.notebook.pack(fill="both", expand=True)
 
         self._linha_atual = 0
@@ -125,6 +137,18 @@ class Ordem_servico_View(tk.Frame):
         self.pack(fill="both", expand=True)
 
     # ------------------------------------------------------------------
+    # Status: valor canônico (banco) <-> texto exibido (idioma ativo)
+    # ------------------------------------------------------------------
+
+    @classmethod
+    def _status_para_canonico(cls, texto_exibido):
+        """Converte o texto do combobox (ex.: 'open') de volta para o valor do banco ('aberta')."""
+        for status in cls.STATUS_OPCOES:
+            if t(status) == texto_exibido:
+                return status
+        return texto_exibido
+
+    # ------------------------------------------------------------------
     # Aba "Dados da Ordem" — construção
     # ------------------------------------------------------------------
 
@@ -138,33 +162,37 @@ class Ordem_servico_View(tk.Frame):
 
     def _criar_combos(self):
         self.combos["cliente"] = self._adicionar_linha(
-            "Cliente:", ttk.Combobox(self.aba_dados, state="readonly", width=40)
+            t("Cliente:"), ttk.Combobox(self.aba_dados, state="readonly", width=40)
         )
         self.combos["funcionario"] = self._adicionar_linha(
-            "Funcionário:", ttk.Combobox(self.aba_dados, state="readonly", width=40)
+            t("Funcionário:"), ttk.Combobox(self.aba_dados, state="readonly", width=40)
         )
         self.combos["equipamento"] = self._adicionar_linha(
-            "Equipamento:", ttk.Combobox(self.aba_dados, state="readonly", width=40)
+            t("Equipamento:"), ttk.Combobox(self.aba_dados, state="readonly", width=40)
         )
 
     def _criar_campos_texto(self):
         for chave, label in self.CAMPOS_TEXTO:
             entry = tk.Entry(self.aba_dados, width=42)
             estilizar_entry(entry)
-            self.entradas[chave] = self._adicionar_linha(label, entry)
+            self.entradas[chave] = self._adicionar_linha(t(label), entry)
             if chave == "data_conclusao_texto":
                 self.combos["status"] = self._adicionar_linha(
-                    "Status:", ttk.Combobox(self.aba_dados, state="readonly", width=40, values=self.STATUS_OPCOES)
+                    t("Status:"),
+                    ttk.Combobox(
+                        self.aba_dados, state="readonly", width=40,
+                        values=[t(status) for status in self.STATUS_OPCOES],
+                    ),
                 )
                 self.combos["status"].current(0)
 
     def _criar_treeview(self):
         colunas_config = {
-            "id": ("ID", 40, "center"),
-            "cliente": ("Cliente", 140, "w"),
-            "equipamento": ("Equipamento", 140, "w"),
-            "status": ("Status", 100, "center"),
-            "data_entrada": ("Entrada", 90, "center"),
+            "id": (t("ID"), 40, "center"),
+            "cliente": (t("Cliente"), 140, "w"),
+            "equipamento": (t("Equipamento"), 140, "w"),
+            "status": (t("Status"), 100, "center"),
+            "data_entrada": (t("Entrada"), 90, "center"),
         }
 
         self.tbl_ordens = ttk.Treeview(
@@ -183,10 +211,10 @@ class Ordem_servico_View(tk.Frame):
         frame.grid(row=self._linha_atual, column=0, columnspan=2, pady=14)
 
         botoes = [
-            ("Novo", self._novo, "primario"),
-            ("Salvar", self._salvar, "primario"),
-            ("Alterar", self._alterar, "primario"),
-            ("Excluir", self._excluir, "perigo"),
+            (t("Novo"), self._novo, "primario"),
+            (t("Salvar"), self._salvar, "primario"),
+            (t("Alterar"), self._alterar, "primario"),
+            (t("Excluir"), self._excluir, "perigo"),
         ]
         for coluna, (texto, comando, estilo) in enumerate(botoes):
             criar_botao(frame, texto, comando, estilo=estilo).grid(row=0, column=coluna, padx=6)
@@ -210,7 +238,7 @@ class Ordem_servico_View(tk.Frame):
                 ordem.id,
                 ordem.cliente.nome,
                 f"{ordem.equipamento.tipo} {ordem.equipamento.marca} {ordem.equipamento.modelo}",
-                ordem.status,
+                t(ordem.status),   # exibe no idioma ativo; o valor no banco continua canônico
                 DataUtils.data_para_string(ordem.data_entrada),   # dd/mm/aaaa, nunca o ISO do banco
             ))
 
@@ -229,7 +257,8 @@ class Ordem_servico_View(tk.Frame):
 
     @staticmethod
     def _exibir_mensagem(titulo, mensagem, sucesso=True):
-        (messagebox.showinfo if sucesso else messagebox.showerror)(titulo, mensagem)
+        """Título e mensagem passam por t(): se não houver tradução cadastrada, aparece o texto original."""
+        (messagebox.showinfo if sucesso else messagebox.showerror)(t(titulo), t(mensagem))
 
     @staticmethod
     def _formatar_valor(valor):
@@ -267,7 +296,7 @@ class Ordem_servico_View(tk.Frame):
         self._selecionar_valor_combo(self.combos["cliente"], ordem.cliente.id)
         self._selecionar_valor_combo(self.combos["funcionario"], ordem.funcionario.id)
         self._selecionar_valor_combo(self.combos["equipamento"], ordem.equipamento.id)
-        self.combos["status"].set(ordem.status)
+        self.combos["status"].set(t(ordem.status))
 
         valores = {
             # As datas vêm do banco como objetos date — converter para dd/mm/aaaa
@@ -315,20 +344,20 @@ class Ordem_servico_View(tk.Frame):
         id_equipamento = self._extrair_id_do_combo(self.combos["equipamento"].get())
 
         if id_cliente is None or id_funcionario is None or id_equipamento is None:
-            raise ValueError("Selecione cliente, funcionário e equipamento.")
+            raise ValueError(t("Selecione cliente, funcionário e equipamento."))
 
         dados = {chave: self.entradas[chave].get().strip() for chave, _ in self.CAMPOS_TEXTO}
         dados.update(
             id_cliente=id_cliente,
             id_funcionario=id_funcionario,
             id_equipamento=id_equipamento,
-            status=self.combos["status"].get(),
+            status=self._status_para_canonico(self.combos["status"].get()),
         )
         return dados
 
     def _coletar_dados_atualizacao(self):
         dados = {chave: self.entradas[chave].get().strip() for chave in self.CAMPOS_ATUALIZAVEIS}
-        dados["status"] = self.combos["status"].get()
+        dados["status"] = self._status_para_canonico(self.combos["status"].get())
         return dados
 
     # ------------------------------------------------------------------
@@ -344,7 +373,7 @@ class Ordem_servico_View(tk.Frame):
         except ValueError as erro:
             self._exibir_mensagem("Erro de validação", str(erro), sucesso=False)
         except Exception as erro:
-            self._exibir_mensagem("Erro inesperado", f"Ocorreu um erro: {erro}", sucesso=False)
+            self._exibir_mensagem("Erro inesperado", f"{t('Ocorreu um erro:')} {erro}", sucesso=False)
 
     def _novo(self):
         self.tbl_ordens.selection_remove(self.tbl_ordens.selection())
@@ -380,7 +409,7 @@ class Ordem_servico_View(tk.Frame):
             self._exibir_mensagem("Aviso", "Selecione uma ordem na lista para excluir.", sucesso=False)
             return
 
-        if not messagebox.askyesno("Confirmação", "Deseja realmente excluir esta ordem de serviço?"):
+        if not messagebox.askyesno(t("Confirmação"), t("Deseja realmente excluir esta ordem de serviço?")):
             return
 
         self._executar_operacao(
@@ -402,31 +431,35 @@ class Ordem_servico_View(tk.Frame):
         form = tk.Frame(self.aba_servicos, bg=COR_FUNDO_JANELA)
         form.pack(fill="x", padx=14, pady=5)
 
-        tk.Label(form, text="Serviço:", bg=COR_FUNDO_JANELA, fg=COR_SUBTITULO, font=FONTE_LABEL).grid(
+        tk.Label(form, text=t("Serviço:"), bg=COR_FUNDO_JANELA, fg=COR_SUBTITULO, font=FONTE_LABEL).grid(
             row=0, column=0, sticky="w", pady=4
         )
         self.combo_servico_aba = ttk.Combobox(form, state="readonly", width=35)
         self.combo_servico_aba.grid(row=0, column=1, padx=8, pady=4)
         self.combo_servico_aba.bind("<<ComboboxSelected>>", self._preencher_valor_padrao_servico)
 
-        tk.Label(form, text="Valor cobrado (R$):", bg=COR_FUNDO_JANELA, fg=COR_SUBTITULO, font=FONTE_LABEL).grid(
-            row=1, column=0, sticky="w", pady=4
-        )
+        tk.Label(
+            form, text=t("Valor cobrado (R$):"), bg=COR_FUNDO_JANELA, fg=COR_SUBTITULO, font=FONTE_LABEL
+        ).grid(row=1, column=0, sticky="w", pady=4)
         self.entry_valor_cobrado_aba = tk.Entry(form, width=12)
         estilizar_entry(self.entry_valor_cobrado_aba)
         self.entry_valor_cobrado_aba.grid(row=1, column=1, sticky="w", padx=8, pady=4)
 
         frame_botoes = tk.Frame(self.aba_servicos, bg=COR_FUNDO_JANELA)
         frame_botoes.pack(pady=8)
-        self.btn_add_servico = tk.Button(frame_botoes, text="Adicionar", width=14, command=self._adicionar_servico)
+        self.btn_add_servico = tk.Button(
+            frame_botoes, text=t("Adicionar"), width=14, command=self._adicionar_servico
+        )
         estilizar_botao_tk(self.btn_add_servico)
         self.btn_add_servico.pack(side="left", padx=5)
         self.btn_atualizar_servico = tk.Button(
-            frame_botoes, text="Atualizar valor", width=14, command=self._atualizar_servico
+            frame_botoes, text=t("Atualizar valor"), width=14, command=self._atualizar_servico
         )
         estilizar_botao_tk(self.btn_atualizar_servico)
         self.btn_atualizar_servico.pack(side="left", padx=5)
-        self.btn_remover_servico = tk.Button(frame_botoes, text="Remover", width=14, command=self._remover_servico)
+        self.btn_remover_servico = tk.Button(
+            frame_botoes, text=t("Remover"), width=14, command=self._remover_servico
+        )
         estilizar_botao_tk(self.btn_remover_servico, estilo="perigo")
         self.btn_remover_servico.pack(side="left", padx=5)
 
@@ -434,9 +467,9 @@ class Ordem_servico_View(tk.Frame):
         self.tbl_servicos = ttk.Treeview(
             self.aba_servicos, columns=colunas, show="headings", height=8, style=self._estilo_tabela
         )
-        self.tbl_servicos.heading("id", text="ID")
-        self.tbl_servicos.heading("servico", text="Serviço")
-        self.tbl_servicos.heading("valor_cobrado", text="Valor Cobrado")
+        self.tbl_servicos.heading("id", text=t("ID"))
+        self.tbl_servicos.heading("servico", text=t("Serviço"))
+        self.tbl_servicos.heading("valor_cobrado", text=t("Valor Cobrado"))
         self.tbl_servicos.column("id", width=40, anchor="center")
         self.tbl_servicos.column("servico", width=220)
         self.tbl_servicos.column("valor_cobrado", width=100, anchor="center")
@@ -445,11 +478,15 @@ class Ordem_servico_View(tk.Frame):
 
         self._id_servico_por_item = {}
 
+    def _texto_total_pecas(self, total):
+        """Texto do rótulo de total, ex.: 'Total peças: R$ 12.50' (ou 'Total parts: $ 12.50')."""
+        return f"{t('Total peças: R$')} {total:.2f}"
+
     def _criar_aba_pecas(self):
         if self.ordem_servico_peca_controller is None or self.peca_dao is None:
             tk.Label(
                 self.aba_pecas,
-                text="Gerenciamento de peças não conectado (controller/DAO não informados).",
+                text=t("Gerenciamento de peças não conectado (controller/DAO não informados)."),
                 justify="left", bg=COR_FUNDO_JANELA, fg=COR_SUBTITULO, font=FONTE_LABEL,
             ).pack(padx=15, pady=15, anchor="w")
             return
@@ -463,23 +500,23 @@ class Ordem_servico_View(tk.Frame):
         form = tk.Frame(self.aba_pecas, bg=COR_FUNDO_JANELA)
         form.pack(fill="x", padx=14, pady=5)
 
-        tk.Label(form, text="Peça:", bg=COR_FUNDO_JANELA, fg=COR_SUBTITULO, font=FONTE_LABEL).grid(
+        tk.Label(form, text=t("Peça:"), bg=COR_FUNDO_JANELA, fg=COR_SUBTITULO, font=FONTE_LABEL).grid(
             row=0, column=0, sticky="w", pady=4
         )
         self.combo_peca_aba = ttk.Combobox(form, state="readonly", width=35)
         self.combo_peca_aba.grid(row=0, column=1, padx=8, pady=4)
         self.combo_peca_aba.bind("<<ComboboxSelected>>", self._preencher_valor_padrao_peca)
 
-        tk.Label(form, text="Quantidade:", bg=COR_FUNDO_JANELA, fg=COR_SUBTITULO, font=FONTE_LABEL).grid(
+        tk.Label(form, text=t("Quantidade:"), bg=COR_FUNDO_JANELA, fg=COR_SUBTITULO, font=FONTE_LABEL).grid(
             row=1, column=0, sticky="w", pady=4
         )
         self.entry_quantidade_peca_aba = tk.Entry(form, width=10)
         estilizar_entry(self.entry_quantidade_peca_aba)
         self.entry_quantidade_peca_aba.grid(row=1, column=1, sticky="w", padx=8, pady=4)
 
-        tk.Label(form, text="Valor unitário (R$):", bg=COR_FUNDO_JANELA, fg=COR_SUBTITULO, font=FONTE_LABEL).grid(
-            row=2, column=0, sticky="w", pady=4
-        )
+        tk.Label(
+            form, text=t("Valor unitário (R$):"), bg=COR_FUNDO_JANELA, fg=COR_SUBTITULO, font=FONTE_LABEL
+        ).grid(row=2, column=0, sticky="w", pady=4)
         self.entry_valor_unitario_peca_aba = tk.Entry(form, width=12)
         estilizar_entry(self.entry_valor_unitario_peca_aba)
         self.entry_valor_unitario_peca_aba.grid(row=2, column=1, sticky="w", padx=8, pady=4)
@@ -487,12 +524,12 @@ class Ordem_servico_View(tk.Frame):
         frame_botoes = tk.Frame(self.aba_pecas, bg=COR_FUNDO_JANELA)
         frame_botoes.pack(pady=8)
         self.btn_add_peca = tk.Button(
-            frame_botoes, text="Adicionar à lista", width=16, command=self._adicionar_peca_na_lista
+            frame_botoes, text=t("Adicionar à lista"), width=16, command=self._adicionar_peca_na_lista
         )
         estilizar_botao_tk(self.btn_add_peca)
         self.btn_add_peca.pack(side="left", padx=5)
         self.btn_remover_peca = tk.Button(
-            frame_botoes, text="Remover da lista", width=16, command=self._remover_peca_da_lista
+            frame_botoes, text=t("Remover da lista"), width=16, command=self._remover_peca_da_lista
         )
         estilizar_botao_tk(self.btn_remover_peca, estilo="perigo")
         self.btn_remover_peca.pack(side="left", padx=5)
@@ -501,10 +538,10 @@ class Ordem_servico_View(tk.Frame):
         self.tbl_pecas = ttk.Treeview(
             self.aba_pecas, columns=colunas, show="headings", height=7, style=self._estilo_tabela
         )
-        self.tbl_pecas.heading("peca", text="Peça")
-        self.tbl_pecas.heading("quantidade", text="Qtd.")
-        self.tbl_pecas.heading("valor_unitario", text="Valor unit.")
-        self.tbl_pecas.heading("subtotal", text="Subtotal")
+        self.tbl_pecas.heading("peca", text=t("Peça"))
+        self.tbl_pecas.heading("quantidade", text=t("Qtd."))
+        self.tbl_pecas.heading("valor_unitario", text=t("Valor unit."))
+        self.tbl_pecas.heading("subtotal", text=t("Subtotal"))
         self.tbl_pecas.column("peca", width=200)
         self.tbl_pecas.column("quantidade", width=60, anchor="center")
         self.tbl_pecas.column("valor_unitario", width=90, anchor="center")
@@ -515,13 +552,13 @@ class Ordem_servico_View(tk.Frame):
         frame_total = tk.Frame(self.aba_pecas, bg=COR_FUNDO_JANELA)
         frame_total.pack(fill="x", padx=14, pady=(0, 8))
         self.lbl_total_pecas = tk.Label(
-            frame_total, text="Total peças: R$ 0.00", anchor="e",
+            frame_total, text=self._texto_total_pecas(0), anchor="e",
             bg=COR_FUNDO_JANELA, fg=COR_TITULO, font=FONTE_LABEL_NEGRITO,
         )
         self.lbl_total_pecas.pack(side="right")
 
         self.btn_salvar_pecas = tk.Button(
-            self.aba_pecas, text="Salvar peças da ordem", command=self._salvar_pecas
+            self.aba_pecas, text=t("Salvar peças da ordem"), command=self._salvar_pecas
         )
         estilizar_botao_tk(self.btn_salvar_pecas)
         self.btn_salvar_pecas.pack(pady=12)
@@ -555,11 +592,11 @@ class Ordem_servico_View(tk.Frame):
 
         if not habilitado:
             self.lbl_ordem_servicos.config(
-                text='Selecione ou salve uma ordem na aba "Dados da Ordem" para gerenciar os serviços.'
+                text=t('Selecione ou salve uma ordem na aba "Dados da Ordem" para gerenciar os serviços.')
             )
             return
 
-        self.lbl_ordem_servicos.config(text=f"Serviços da ordem #{self.id_selecionado}")
+        self.lbl_ordem_servicos.config(text=f"{t('Serviços da ordem')} #{self.id_selecionado}")
 
         sucesso, resultado = self.ordem_servico_servico_controller.buscar_por_ordem(self.id_selecionado)
         if not sucesso:
@@ -663,7 +700,7 @@ class Ordem_servico_View(tk.Frame):
             self._exibir_mensagem("Aviso", "Selecione um serviço na lista para remover.", sucesso=False)
             return
 
-        if not messagebox.askyesno("Confirmação", "Remover este serviço da ordem?"):
+        if not messagebox.askyesno(t("Confirmação"), t("Remover este serviço da ordem?")):
             return
 
         sucesso, resultado = self.ordem_servico_servico_controller.deletar(self.id_item_servico_selecionado)
@@ -704,12 +741,12 @@ class Ordem_servico_View(tk.Frame):
 
         if not habilitado:
             self.lbl_ordem_pecas.config(
-                text='Selecione ou salve uma ordem na aba "Dados da Ordem" para gerenciar as peças.'
+                text=t('Selecione ou salve uma ordem na aba "Dados da Ordem" para gerenciar as peças.')
             )
             self._renderizar_tabela_pecas()
             return
 
-        self.lbl_ordem_pecas.config(text=f"Peças da ordem #{self.id_selecionado}")
+        self.lbl_ordem_pecas.config(text=f"{t('Peças da ordem')} #{self.id_selecionado}")
 
         sucesso, resultado = self.ordem_servico_peca_controller.listar_pecas_da_ordem(self.id_selecionado)
         if not sucesso:
@@ -739,7 +776,7 @@ class Ordem_servico_View(tk.Frame):
                 f"{float(dados['valor_unitario']):.2f}",
                 f"{subtotal:.2f}",
             ))
-        self.lbl_total_pecas.config(text=f"Total peças: R$ {total:.2f}")
+        self.lbl_total_pecas.config(text=self._texto_total_pecas(total))
 
     # ------------------------------------------------------------------
     # Aba "Peças Utilizadas" — seleção e ações

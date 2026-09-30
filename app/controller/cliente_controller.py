@@ -1,3 +1,4 @@
+from app.core.idioma import t
 from app.models.cliente import Cliente
 
 
@@ -10,17 +11,17 @@ class ClienteController:
         erros = []
 
         if not nome or not nome.strip():
-            erros.append("O nome é obrigatório.")
+            erros.append(t("O nome é obrigatório."))
 
         cpf_numeros = "".join(filter(str.isdigit, cpf or ""))
         if len(cpf_numeros) != 11:
-            erros.append("CPF inválido. Deve conter 11 dígitos.")
+            erros.append(t("CPF inválido. Deve conter 11 dígitos."))
 
         if not telefone or not telefone.strip():
-            erros.append("O telefone é obrigatório.")
+            erros.append(t("O telefone é obrigatório."))
 
         if not self._validar_email(email):
-            erros.append("O email é inválido.")
+            erros.append(t("O email é inválido."))
 
         return erros
 
@@ -44,7 +45,7 @@ class ClienteController:
             return False, "\n".join(erros)
 
         if self._cpf_ja_cadastrado(cpf):
-            return False, "CPF já cadastrado."
+            return False, t("CPF já cadastrado.")
 
         cliente = Cliente(None, nome.strip(), cpf.strip(), telefone.strip(), email.strip())
 
@@ -52,12 +53,12 @@ class ClienteController:
             cliente = self.dao.save(cliente)
             return True, cliente
         except Exception as erro:
-            return False, f"Erro ao cadastrar cliente: {erro}"
+            return False, f"{t('Erro ao cadastrar cliente:')} {erro}"
 
     def atualizar(self, id, nome, cpf, telefone, email):
         cliente = self.dao.get_by_id(id)
         if cliente is None:
-            return False, "Cliente não encontrado."
+            return False, t("Cliente não encontrado.")
 
         erros = self._validar_dados(nome, cpf, telefone, email)
         if erros:
@@ -65,7 +66,7 @@ class ClienteController:
 
         existente = self._cpf_ja_cadastrado(cpf)
         if existente and existente.id != id:
-            return False, "Já existe outro cliente cadastrado com esse CPF."
+            return False, t("Já existe outro cliente cadastrado com esse CPF.")
 
         cliente.nome = nome.strip()
         cliente.cpf = cpf.strip()
@@ -75,29 +76,29 @@ class ClienteController:
         try:
             sucesso = self.dao.update(cliente)
             if sucesso:
-                return True, "Cliente atualizado com sucesso."
-            return False, "Não foi possível atualizar o cliente."
+                return True, t("Cliente atualizado com sucesso.")
+            return False, t("Não foi possível atualizar o cliente.")
         except Exception as erro:
-            return False, f"Erro ao atualizar cliente: {erro}"
+            return False, f"{t('Erro ao atualizar cliente:')} {erro}"
 
     def deletar(self, id):
         cliente = self.dao.get_by_id(id)
         if cliente is None:
-            return False, "Cliente não encontrado."
+            return False, t("Cliente não encontrado.")
 
         try:
             sucesso = self.dao.delete(id)
             if sucesso:
-                return True, "Cliente deletado com sucesso."
+                return True, t("Cliente deletado com sucesso.")
             else:
-                return False, "Falha ao deletar cliente."
+                return False, t("Falha ao deletar cliente.")
         except Exception as erro:
-            return False, f"Erro ao deletar cliente: {erro}"
+            return False, f"{t('Erro ao deletar cliente:')} {erro}"
 
     def buscar_por_id(self, id):
         cliente = self.dao.get_by_id(id)
         if cliente is None:
-            return False, "Cliente não encontrado."
+            return False, t("Cliente não encontrado.")
         return True, cliente
 
     def buscar_todos(self):
@@ -105,4 +106,4 @@ class ClienteController:
             clientes = self.dao.get_all()
             return True, clientes
         except Exception as erro:
-            return False, f"Erro ao buscar clientes: {erro}"
+            return False, f"{t('Erro ao buscar clientes:')} {erro}"

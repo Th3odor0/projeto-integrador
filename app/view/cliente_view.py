@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 
+from app.core.idioma import t
 from app.view.estilo_view import (
     COR_FUNDO_JANELA, CORES_MODULOS,
     configurar_janela, criar_cabecalho, criar_cartao, criar_label,
@@ -14,7 +15,7 @@ class Cliente_view(tk.Frame):
         self.master = master
         self.controller = cliente_controller  # Controller que faz as validações com o banco
 
-        configurar_janela(self.master, "Clientes")
+        configurar_janela(self.master, t("Clientes"))
         self._criar_widgets()
         self._carregar_lista()
 
@@ -24,7 +25,7 @@ class Cliente_view(tk.Frame):
     def _criar_widgets(self):
         """Monta o cabeçalho, o formulário (num cartão) e a lista de clientes."""
         criar_cabecalho(
-            self, "Clientes", "Cadastro e histórico de clientes",
+            self, t("Clientes"), t("Cadastro e histórico de clientes"),
             cor_destaque=CORES_MODULOS["cliente"],
         )
 
@@ -42,35 +43,35 @@ class Cliente_view(tk.Frame):
 
         # --- Campo ID (somente leitura: só é preenchido automaticamente pelo sistema,
         # nunca digitado pelo usuário) ---
-        criar_label(form, "ID:").grid(row=linha, column=0, sticky="w", padx=5, pady=6)
+        criar_label(form, t("ID:")).grid(row=linha, column=0, sticky="w", padx=5, pady=6)
         self.entry_id = tk.Entry(form, width=40, state="readonly")
         estilizar_entry(self.entry_id)
         self.entry_id.grid(row=linha, column=1, padx=5, pady=6)
         linha += 1
 
         # --- Campo Nome ---
-        criar_label(form, "Nome:").grid(row=linha, column=0, sticky="w", padx=5, pady=6)
+        criar_label(form, t("Nome:")).grid(row=linha, column=0, sticky="w", padx=5, pady=6)
         self.entry_nome = tk.Entry(form, width=40)
         estilizar_entry(self.entry_nome)
         self.entry_nome.grid(row=linha, column=1, padx=5, pady=6)
         linha += 1
 
         # --- Campo CPF ---
-        criar_label(form, "CPF:").grid(row=linha, column=0, sticky="w", padx=5, pady=6)
+        criar_label(form, t("CPF:")).grid(row=linha, column=0, sticky="w", padx=5, pady=6)
         self.entry_cpf = tk.Entry(form, width=40)
         estilizar_entry(self.entry_cpf)
         self.entry_cpf.grid(row=linha, column=1, padx=5, pady=6)
         linha += 1
 
         # --- Campo Telefone ---
-        criar_label(form, "Telefone:").grid(row=linha, column=0, sticky="w", padx=5, pady=6)
+        criar_label(form, t("Telefone:")).grid(row=linha, column=0, sticky="w", padx=5, pady=6)
         self.entry_telefone = tk.Entry(form, width=40)
         estilizar_entry(self.entry_telefone)
         self.entry_telefone.grid(row=linha, column=1, padx=5, pady=6)
         linha += 1
 
         # --- Campo Email ---
-        criar_label(form, "Email:").grid(row=linha, column=0, sticky="w", padx=5, pady=6)
+        criar_label(form, t("Email:")).grid(row=linha, column=0, sticky="w", padx=5, pady=6)
         self.entry_email = tk.Entry(form, width=40)
         estilizar_entry(self.entry_email)
         self.entry_email.grid(row=linha, column=1, padx=5, pady=6)
@@ -80,10 +81,10 @@ class Cliente_view(tk.Frame):
         frame_botoes = tk.Frame(form, bg=form["bg"])
         frame_botoes.grid(row=linha, column=0, columnspan=2, pady=(16, 0))
 
-        criar_botao(frame_botoes, "Salvar", self._salvar).pack(side="left", padx=5)
-        criar_botao(frame_botoes, "Atualizar", self._atualizar).pack(side="left", padx=5)
-        criar_botao(frame_botoes, "Deletar", self._deletar, estilo="perigo").pack(side="left", padx=5)
-        criar_botao(frame_botoes, "Novo", self._limpar_campos).pack(side="left", padx=5)
+        criar_botao(frame_botoes, t("Salvar"), self._salvar).pack(side="left", padx=5)
+        criar_botao(frame_botoes, t("Atualizar"), self._atualizar).pack(side="left", padx=5)
+        criar_botao(frame_botoes, t("Deletar"), self._deletar, estilo="perigo").pack(side="left", padx=5)
+        criar_botao(frame_botoes, t("Novo"), self._limpar_campos).pack(side="left", padx=5)
 
         # --- Lista de clientes já cadastrados ---
         cartao_lista = criar_cartao(corpo)
@@ -93,11 +94,11 @@ class Cliente_view(tk.Frame):
 
         colunas = ("id", "nome", "cpf", "telefone", "email")
         self.tree = ttk.Treeview(cartao_lista, columns=colunas, show="headings", style=estilo_tabela)
-        self.tree.heading("id", text="ID")
-        self.tree.heading("nome", text="Nome")
-        self.tree.heading("cpf", text="CPF")
-        self.tree.heading("telefone", text="Telefone")
-        self.tree.heading("email", text="Email")
+        self.tree.heading("id", text=t("ID"))
+        self.tree.heading("nome", text=t("Nome"))
+        self.tree.heading("cpf", text=t("CPF"))
+        self.tree.heading("telefone", text=t("Telefone"))
+        self.tree.heading("email", text=t("Email"))
 
         self.tree.column("id", width=40)
         self.tree.column("nome", width=180)
@@ -120,7 +121,7 @@ class Cliente_view(tk.Frame):
 
         sucesso, resultado = self.controller.buscar_todos()
         if not sucesso:
-            messagebox.showerror("Erro", resultado)
+            messagebox.showerror(t("Erro"), resultado)
             return
 
         for cliente in resultado:
@@ -173,12 +174,12 @@ class Cliente_view(tk.Frame):
         """
         id_texto = self.entry_id.get()
         if not id_texto.strip():
-            messagebox.showerror("Erro", "Nenhum cliente selecionado (ID vazio).")
+            messagebox.showerror(t("Erro"), t("Nenhum cliente selecionado (ID vazio)."))
             return None
         try:
             return int(id_texto)
         except ValueError:
-            messagebox.showerror("Erro", "O campo ID deve ser um número inteiro.")
+            messagebox.showerror(t("Erro"), t("O campo ID deve ser um número inteiro."))
             return None
 
     def _salvar(self):
@@ -192,12 +193,12 @@ class Cliente_view(tk.Frame):
 
         if sucesso:
             novo_id = resultado.id  # 'resultado' é o objeto Cliente; o ID gerado está em .id
-            messagebox.showinfo("Sucesso", f"Cliente cadastrado com sucesso!")
+            messagebox.showinfo(t("Sucesso"), t("Cliente cadastrado com sucesso!"))
             self._limpar_campos()
             self._carregar_lista()
         else:
             # 'resultado' aqui é a mensagem de erro vinda do Controller (validação ou CPF duplicado)
-            messagebox.showerror("Erro", resultado)
+            messagebox.showerror(t("Erro"), resultado)
 
     def _atualizar(self):
         """Atualiza o cliente do ID informado com os dados atuais dos campos"""
@@ -214,11 +215,11 @@ class Cliente_view(tk.Frame):
         )
 
         if sucesso:
-            messagebox.showinfo("Sucesso", resultado)
+            messagebox.showinfo(t("Sucesso"), resultado)
             self._limpar_campos()
             self._carregar_lista()
         else:
-            messagebox.showerror("Erro", resultado)
+            messagebox.showerror(t("Erro"), resultado)
 
     def _deletar(self):
         """Deletar o cliente do ID informado, pedindo confirmação antes."""
@@ -226,17 +227,17 @@ class Cliente_view(tk.Frame):
         if id_cliente is None:
             return
 
-        confirmar = messagebox.askyesno("Confirmar", "Tem certeza que deseja excluir esse cliente?")
+        confirmar = messagebox.askyesno(t("Confirmar"), t("Tem certeza que deseja excluir esse cliente?"))
         if not confirmar:
             return
 
         sucesso, resultado = self.controller.deletar(id_cliente)
         if sucesso:
-            messagebox.showinfo("Sucesso", resultado)
+            messagebox.showinfo(t("Sucesso"), resultado)
             self._limpar_campos()
             self._carregar_lista()
         else:
-            messagebox.showerror("Erro", resultado)
+            messagebox.showerror(t("Erro"), resultado)
 
     def _limpar_campos(self):
         """Limpa todos os campos, incluindo o ID (usado pelo botão 'Novo')"""

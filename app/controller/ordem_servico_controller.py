@@ -1,4 +1,5 @@
-from app.core.idioma import t
+from datetime import datetime
+
 from app.models.ordem_servico import Ordem_servico
 from app.core.dataUltils import DataUtils
 
@@ -10,9 +11,16 @@ class Ordem_servico_Controller:
         self.funcionario_dao = funcionario_dao
         self.equipamento_dao = equipamento_dao
 
-    # ------------------------------------------------------------------
-    # Validações reaproveitadas por cadastrar() e atualizar()
-    # ------------------------------------------------------------------
+    @staticmethod
+    def _so_data(valor):
+        """
+        As colunas data_entrada / data_conclusao são DATETIME no banco, mas a
+        tela trabalha com datas (dd/mm/aaaa). Comparar date com datetime dá
+        TypeError, então normalizamos tudo para date antes de comparar.
+        """
+        if isinstance(valor, datetime):
+            return valor.date()
+        return valor
 
     @staticmethod
     def _validar_valor_total(valor_total):
@@ -28,7 +36,6 @@ class Ordem_servico_Controller:
 
     @staticmethod
     def _validar_dias_garantia(dias_garantia):
-        # Campo opcional: vazio vira 0
         if dias_garantia is None or str(dias_garantia).strip() == "":
             return 0
 
@@ -44,7 +51,6 @@ class Ordem_servico_Controller:
 
     @staticmethod
     def _validar_data_conclusao(data_conclusao_texto):
-        # Data de conclusão é opcional (OS ainda em andamento)
         if not data_conclusao_texto:
             return None
 
@@ -53,21 +59,47 @@ class Ordem_servico_Controller:
 
         return DataUtils.string_para_data(data_conclusao_texto)
 
-    # ------------------------------------------------------------------
-    # Operações
-    # ------------------------------------------------------------------
+    def _checar_datas(self, data_entrada, data_conclusao):
+        if data_conclusao is None or data_entrada is None:
+            return
+        if self._so_data(data_conclusao) < self._so_data(data_entrada):
+            raise ValueError("Data de conclusão não pode ser anterior à data de entrada.")
+
+    def _buscar_entidades_relacionadas(self, id_cliente, id_funcionario, id_equipamento):
+        """Busca cliente/funcionário/equipamento e garante que todos existem.
+        As três colunas (cliente_id, funcionario_id, equipamento_id) são
+        NOT NULL no banco, então id vazio também é erro aqui."""
+        if id_cliente is None:
+            raise ValueError("Selecione o cliente.")
+        if id_funcionario is None:
+            raise ValueError("Selecione o funcionário.")
+        if id_equipamento is None:
+            raise ValueError("Selecione o equipamento.")
+
+        cliente = self.cliente_dao.get_by_id(id_cliente)
+        if cliente is None:
+            raise ValueError(f"Cliente com id {id_cliente} não encontrado.")
+
+        funcionario = self.funcionario_dao.get_by_id(id_funcionario)
+        if funcionario is None:
+            raise ValueError(f"Funcionário com id {id_funcionario} não encontrado.")
+
+        equipamento = self.equipamento_dao.get_by_id(id_equipamento)
+        if equipamento is None:
+            raise ValueError(f"Equipamento com id {id_equipamento} não encontrado.")
+
+        return cliente, funcionario, equipamento
 
     def cadastrar(self, id_cliente, id_funcionario, id_equipamento, data_entrada_texto,
                   data_conclusao_texto, status, problema, diagnostico,
                   valor_total, forma_pagamento, dias_garantia):
-        """
-        Recebe dados "crus" vindos da tela (Tkinter), valida e converte,
-        monta o objeto Ordem_servico e delega o salvamento ao DAO.
-        """
 
-        # --- Validações básicas ---
         if not problema or not problema.strip():
-            raise ValueError(t("O campo 'problema' é obrigatório."))
+            raise ValueError("O campo 'problema' é obrigatório.")
+
+        # coluna `problema` é VARCHAR(255)
+        if len(problema.strip()) > 255:
+            raise ValueError("O problema deve ter no máximo 255 caracteres.")
 
         if not data_entrada_texto or not str(data_entrada_texto).strip():
             raise ValueError(t("A data de entrada é obrigatória."))
@@ -82,31 +114,18 @@ class Ordem_servico_Controller:
         dias_garantia = self._validar_dias_garantia(dias_garantia)
 
         data_entrada = DataUtils.string_para_data(data_entrada_texto)
+        self._checar_datas(data_entrada, data_conclusao)
 
-        # Conclusão não pode ser anterior à entrada
-        if data_conclusao is not None and data_conclusao < data_entrada:
-            raise ValueError(t("Data de conclusão não pode ser anterior à data de entrada."))
+        cliente, funcionario, equipamento = self._buscar_entidades_relacionadas(
+            id_cliente, id_funcionario, id_equipamento
+        )
 
-        # --- Busca as entidades relacionadas (garante que existem) ---
-        cliente = self.cliente_dao.get_by_id(id_cliente)
-        if cliente is None:
-            raise ValueError(t("Cliente com id {id} não encontrado.", id=id_cliente))
-
-        funcionario = self.funcionario_dao.get_by_id(id_funcionario)
-        if funcionario is None:
-            raise ValueError(t("Funcionário com id {id} não encontrado.", id=id_funcionario))
-
-        equipamento = self.equipamento_dao.get_by_id(id_equipamento)
-        if equipamento is None:
-            raise ValueError(t("Equipamento com id {id} não encontrado.", id=id_equipamento))
-
-        # --- Monta o objeto e delega ao DAO ---
         nova_ordem = Ordem_servico(
             id=None,
             data_entrada=data_entrada,
             data_conclusao=data_conclusao,
             status=status,
-            problema=problema,
+            problema=problema.strip(),
             diagnostico=diagnostico,
             valor_total=valor_total,
             forma_pagamento=forma_pagamento,
@@ -127,39 +146,48 @@ class Ordem_servico_Controller:
             raise ValueError(t("Ordem de serviço com id {id} não encontrada.", id=id))
         return ordem
 
-    def atualizar(self, id, status, data_conclusao_texto, problema, diagnostico,
+    def atualizar(self, id, id_cliente, id_funcionario, id_equipamento, status,
+                  data_conclusao_texto, problema, diagnostico,
                   valor_total, forma_pagamento, dias_garantia):
         """
-        Atualização parcial: busca a ordem existente, aplica os novos dados
-        e salva. Mantém cliente/funcionario/equipamento e a data de entrada originais.
+        Atualização da ordem. Cliente, funcionário e equipamento são editáveis;
+        só a data de entrada continua vindo da ordem original.
         """
         ordem = self.buscar_por_id(id)
 
         if not problema or not problema.strip():
-            raise ValueError(t("O campo 'problema' é obrigatório."))
+            raise ValueError("O campo 'problema' é obrigatório.")
+
+        if len(problema.strip()) > 255:
+            raise ValueError("O problema deve ter no máximo 255 caracteres.")
 
         data_conclusao = self._validar_data_conclusao(data_conclusao_texto)
         valor_total = self._validar_valor_total(valor_total)
         dias_garantia = self._validar_dias_garantia(dias_garantia)
 
-        data_entrada = DataUtils.string_para_data(ordem.data_entrada)
-        if data_conclusao is not None and data_entrada is not None and data_conclusao < data_entrada:
-            raise ValueError(t("Data de conclusão não pode ser anterior à data de entrada."))
+        self._checar_datas(ordem.data_entrada, data_conclusao)
+
+        cliente, funcionario, equipamento = self._buscar_entidades_relacionadas(
+            id_cliente, id_funcionario, id_equipamento
+        )
 
         ordem.atualizar_dados(
-            nova_entrada=ordem.data_entrada,   # mantém a data original de entrada
+            nova_entrada=ordem.data_entrada,
             nova_conclusao=data_conclusao,
             novo_status=status,
-            novo_problema=problema,
+            novo_problema=problema.strip(),
             novo_diagnostico=diagnostico,
             novo_valor=valor_total,
             novo_pagamento=forma_pagamento,
             nova_garantia=dias_garantia
         )
+        # atualizar_dados não cobre cliente/funcionario/equipamento
+        ordem.cliente = cliente
+        ordem.funcionario = funcionario
+        ordem.equipamento = equipamento
 
         return self.ordem_servico_dao.update(ordem)
 
     def excluir(self, id):
-        # Garante que existe antes de tentar excluir (evita exclusão silenciosa de algo inexistente)
         self.buscar_por_id(id)
         self.ordem_servico_dao.delete(id)

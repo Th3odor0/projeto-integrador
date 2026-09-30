@@ -61,13 +61,23 @@ class Ordem_servico:
     def cliente(self):
         return self._cliente
 
+    @cliente.setter
+    def cliente(self, novo_cliente):
+        self._cliente = novo_cliente
+
     @property
     def funcionario(self):
         return self._funcionario
+    @funcionario.setter
+    def funcionario(self, novo_funcionario):
+        self._funcionario = novo_funcionario
 
     @property
     def equipamento(self):
         return self._equipamento
+    @equipamento.setter
+    def equipamento(self, novo_equipamento):
+        self._equipamento = novo_equipamento
 
     @property
     def data_entrada(self):

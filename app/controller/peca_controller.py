@@ -1,5 +1,3 @@
-# Ajuste os imports abaixo conforme o caminho real dos seus arquivos no projeto
-from app.core.idioma import t
 from app.models.pecas import Peca
 
 
@@ -78,7 +76,6 @@ class PecaController:
             return False, f"{t('Erro ao atualizar peça:')} {erro}"
 
     def excluir(self, id):
-        """Exclui uma peça pelo ID."""
         if self.dao.get_by_id(id) is None:
             return False, t("Peça não encontrada.")
 
@@ -93,37 +90,12 @@ class PecaController:
     def buscar_por_id(self, id):
         return self.dao.get_by_id(id)
 
-    def listar_todos(self):
-        return self.dao.get_all()
-
-    # ---------- Regra de negócio adicional (opcional) ----------
-
-    def dar_baixa_estoque(self, id, quantidade_utilizada):
-        """
-        Reduz a quantidade em estoque de uma peça, útil quando ela é usada
-        numa ordem de serviço (tabela ordem_servico_pecas). Remova se não precisar.
-        """
-        peca = self.dao.get_by_id(id)
-        if peca is None:
-            return False, t("Peça não encontrada.")
-
+    def buscar_todos(self):
         try:
-            quantidade_utilizada = int(quantidade_utilizada)
-        except (TypeError, ValueError):
-            return False, t("Quantidade inválida.")
-
-        if quantidade_utilizada <= 0:
-            return False, t("A quantidade utilizada deve ser maior que zero.")
-
-        if quantidade_utilizada > peca.quantidade_estoque:
-            return False, t("Estoque insuficiente para essa quantidade.")
-
-        nova_quantidade = peca.quantidade_estoque - quantidade_utilizada
-        peca.atualizar_dados(peca.nome, peca.codigo, nova_quantidade, peca.preco_venda)
-
-        try:
-            self.dao.update(peca)
-            # t() aceita kwargs: o {quantidade} da chave é preenchido com .format()
-            return True, t("Baixa de estoque realizada. Restam {quantidade} unidades.", quantidade=nova_quantidade)
+            return True, self.dao.get_all()
         except Exception as erro:
-            return False, f"{t('Erro ao atualizar estoque:')} {erro}"
+            return False, f"Erro ao buscar peças: {erro}"
+
+    # dar_baixa_estoque foi removido: o estoque agora é ajustado dentro da
+    # transação de OrdemServicoPecaDAO.substituir_pecas_da_ordem_servico
+    # (ler, calcular e gravar aqui dava erro quando dois acessos ocorriam juntos).

@@ -1,5 +1,3 @@
-# Ajuste o import abaixo conforme o caminho real do seu projeto
-from app.core.idioma import t
 from app.models.equipamento import Equipamento
 
 
@@ -68,7 +66,7 @@ class EquipamentoController:
             return False, t("Já existe outro equipamento cadastrado com esse número de série.")
 
         equipamento.atualizar_dados(tipo.strip(), marca.strip(), modelo.strip(), numero_serie.strip())
-        equipamento.id_cliente = id_cliente  # atualizar_dados não cobre id_cliente
+        equipamento.id_cliente = id_cliente
 
         try:
             sucesso = self.dao.update(equipamento)
@@ -93,5 +91,8 @@ class EquipamentoController:
     def buscar_por_id(self, id):
         return self.dao.get_by_id(id)
 
-    def listar_todos(self):
-        return self.dao.get_all()
+    def buscar_todos(self):
+        try:
+            return True, self.dao.get_all()
+        except Exception as erro:
+            return False, f"Erro ao buscar equipamentos: {erro}"

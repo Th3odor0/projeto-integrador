@@ -28,9 +28,7 @@ class ClienteController:
     def _validar_email(self, email):
         if not email or not email.strip():
             return False
-        if "@" not in email or "." not in email:
-            return False
-        return True
+        return "@" in email and "." in email
 
     def _cpf_ja_cadastrado(self, cpf):
         cpf = (cpf or "").strip()
@@ -81,7 +79,7 @@ class ClienteController:
         except Exception as erro:
             return False, f"{t('Erro ao atualizar cliente:')} {erro}"
 
-    def deletar(self, id):
+    def excluir(self, id):
         cliente = self.dao.get_by_id(id)
         if cliente is None:
             return False, t("Cliente não encontrado.")
@@ -89,11 +87,10 @@ class ClienteController:
         try:
             sucesso = self.dao.delete(id)
             if sucesso:
-                return True, t("Cliente deletado com sucesso.")
-            else:
-                return False, t("Falha ao deletar cliente.")
+                return True, "Cliente excluído com sucesso."
+            return False, "Falha ao excluir cliente."
         except Exception as erro:
-            return False, f"{t('Erro ao deletar cliente:')} {erro}"
+            return False, f"Erro ao excluir cliente: {erro}"
 
     def buscar_por_id(self, id):
         cliente = self.dao.get_by_id(id)
@@ -103,7 +100,6 @@ class ClienteController:
 
     def buscar_todos(self):
         try:
-            clientes = self.dao.get_all()
-            return True, clientes
+            return True, self.dao.get_all()
         except Exception as erro:
             return False, f"{t('Erro ao buscar clientes:')} {erro}"

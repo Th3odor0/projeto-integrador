@@ -1,7 +1,3 @@
-from app.models.ordem_servico import Ordem_servico
-from app.models.servico import Servico
-
-
 class Ordem_servico_servico:
     def __init__(self, id, valor_cobrado, id_servico=None, id_ordem_servico=None):
         self._id = id
@@ -15,6 +11,10 @@ class Ordem_servico_servico:
     @property
     def id(self):
         return self._id
+
+    @id.setter
+    def id(self, novo_id):
+        self._id = novo_id
 
     @property
     def valor_cobrado(self):

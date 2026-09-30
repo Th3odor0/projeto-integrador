@@ -6,6 +6,12 @@ class Peca:
         self._quantidade_estoque = quantidade_estoque
         self._preco_venda = preco_venda
 
+        # Preenchidos pelo DAO de ordem_servico_pecas ao listar as peças de uma
+        # ordem (colunas `quantidade` e `valor_unitario` da tabela de ligação).
+        # Ficam declarados aqui para não serem atributos "surpresa".
+        self.quantidade_os = None
+        self.valor_unitario_os = None
+
     def atualizar_dados(self, novo_nome, novo_codigo, nova_quantidade, novo_preco_venda):
         self._nome = novo_nome
         self._codigo = novo_codigo

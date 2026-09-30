@@ -1,18 +1,21 @@
+# Coloque este arquivo na RAIZ do projeto (onde está o main.py atual), com o nome main.py.
+import traceback
 import tkinter as tk
-from datetime import datetime
-from app.core.database import Database
-from app.core.idioma import t, carregar_idioma, idioma_atual, IDIOMAS_DISPONIVEIS
+from tkinter import messagebox
 
-# DAOs das entidades necessárias para Ordem de Serviço
-from app.dao.cliente_dao import Cliente_DAO
-from app.dao.funcionario_dao import Funcionario_DAO
+from app.core.database import Database
+from app.view.estilo_view import COR_FUNDO_JANELA, CORES_MODULOS
+
+# DAOs
+from app.dao.cliente_dao import ClienteDAO
+from app.dao.funcionario_dao import FuncionarioDAO
 from app.dao.equipamento_dao import EquipamentoDAO
-from app.dao.ordem_servico_dao import Ordem_servico_DAO
-from app.dao.ordem_servico_pecas_dao import Ordem_Servico_Peca_DAO
+from app.dao.ordem_servico_dao import OrdemServicoDAO
+from app.dao.ordem_servico_pecas_dao import OrdemServicoPecaDAO
 from app.dao.peca_dao import PecaDAO
 from app.dao.servico_dao import ServicoDAO
 from app.dao.ordem_servico_servico_dao import Ordem_servico_Servico_Dao
-# Controller
+# Controllers
 from app.controller.ordem_servico_controller import Ordem_servico_Controller
 from app.controller.cliente_controller import ClienteController
 from app.controller.funcionario_controller import FuncionarioController
@@ -20,126 +23,83 @@ from app.controller.peca_controller import PecaController
 from app.controller.servico_controller import ServicoController
 from app.controller.equipamento_controller import EquipamentoController
 from app.controller.ordem_servico_servico_controller import Ordem_servico_Servico_Controller
-# Ajuste este caminho para onde você salvou o Ordem_Servico_Peca_Controller
 from app.controller.ordem_servico_pecas_controller import Ordem_Servico_Peca_Controller
-# View
+# Views
+from app.view.menu_view import MenuPrincipal
 from app.view.ordem_servico_view import Ordem_servico_View
-from app.view.cliente_view import Cliente_view
+from app.view.cliente_view import Cliente_View
 from app.view.equipamento_view import Equipamento_View
 from app.view.funcionario_view import Funcionario_View
 from app.view.servico_view import Servico_View
 from app.view.peca_view import Peca_View
-# Ordem_servico_Servico_View não é mais aberta como janela própria — ela virou
-# a aba "Serviços Prestados" embutida na Ordem_servico_View. O import dela e
-# de Ordem_servico_Peca_View não são mais necessários aqui.
-
-# --- Temas: cada um é um dicionário com as mesmas chaves, trocado em bloco
-# ao alternar entre claro/escuro. O dourado (accent) e as cores dos módulos
-# ficam fixos nos dois temas — são identidade visual, não dependem do modo.
-TEMA_CLARO = {
-    "sidebar": "#101a2c",
-    "sidebar_hover": "#1c2a44",
-    "sidebar_texto": "#a9b3c2",
-    "sidebar_texto_ativo": "#ffffff",
-    "accent": "#c9a227",
-    "fundo_conteudo": "#f4f6f9",
-    "cartao": "#ffffff",
-    "borda_cartao": "#e3e8ee",
-    "titulo": "#101828",
-    "subtitulo": "#667085",
-    "sair_hover": "#c0392b",
-}
-
-TEMA_ESCURO = {
-    "sidebar": "#0a0f1a",
-    "sidebar_hover": "#16202f",
-    "sidebar_texto": "#8a94a6",
-    "sidebar_texto_ativo": "#ffffff",
-    "accent": "#c9a227",
-    "fundo_conteudo": "#12161f",
-    "cartao": "#1a1f2b",
-    "borda_cartao": "#2a3040",
-    "titulo": "#f2f4f7",
-    "subtitulo": "#98a2b3",
-    "sair_hover": "#e05252",
-}
-
-FONTE_MARCA = ("Segoe UI", 16, "bold")
-FONTE_TAGLINE = ("Segoe UI", 9)
-FONTE_NAV_ITEM = ("Segoe UI", 11)
-FONTE_TOPBAR_TITULO = ("Segoe UI", 11, "bold")
-FONTE_TOPBAR_DATA = ("Segoe UI", 10)
-FONTE_BEMVINDO = ("Segoe UI", 26, "bold")
-FONTE_SUBTITULO_BEMVINDO = ("Segoe UI", 11)
-FONTE_TILE_TITULO = ("Segoe UI", 16, "bold")
-FONTE_TILE_DESCRICAO = ("Segoe UI", 11)
-
-# Um destaque de cor por módulo, usado na faixa superior e no emblema do cartão.
-# O segundo item é a chave base dos textos: o título vem de "<chave>.titulo"
-# e a descrição de "<chave>.descricao" nos arquivos de idioma.
-MODULOS = [
-    ("🧾", "modulo.os", "_abrir_ordem_servico", "#2f6fed"),
-    ("👤", "modulo.cliente", "_abrir_cliente", "#1f9d63"),
-    ("👷", "modulo.funcionario", "_abrir_funcionario", "#7c5cff"),
-    ("💻", "modulo.equipamento", "_abrir_equipamento", "#e08e2b"),
-    ("🔧", "modulo.servico", "_abrir_servico", "#0f9b8e"),
-    ("🔩", "modulo.peca", "_abrir_peca", "#d1495b"),
-]
 
 
 class ErpApplication:
+    """
+    Raiz da aplicação: conecta no banco, monta os DAOs e Controllers de cada
+    módulo, mostra o menu principal e abre a janela de cada módulo quando o
+    usuário clica no cartão dele.
+    """
 
     def __init__(self):
-        carregar_idioma("pt")  # idioma inicial; o usuário troca pela sidebar
-
-        self._database = Database()
         self._root = tk.Tk()
+        self._root.withdraw()  # não mostra a janela vazia enquanto conecta
+        # qualquer erro dentro de um botão/callback vira popup (e sai no terminal)
+        self._root.report_callback_exception = self._mostrar_erro_inesperado
 
-        self._janela_ordem_servico = None
-        self._janela_cliente = None
-        self._janela_funcionario = None
-        self._janela_equipamento = None
-        self._janela_servico = None
-        self._janela_peca = None
+        try:
+            self._database = Database()
+        except Exception as erro:
+            traceback.print_exc()
+            messagebox.showerror(
+                "Banco de dados",
+                f"Não foi possível conectar ao MySQL:\n\n{erro}",
+                parent=self._root,
+            )
+            self._root.destroy()
+            raise SystemExit(1)
 
-        # Estado do tema: guardamos qual está ativo e o dicionário de cores
-        # correspondente. Toda a UI lê as cores daqui (self._cores), nunca
-        # de uma constante fixa, para que a troca de tema afete tudo de uma vez.
-        self._tema_atual = "claro"
-        self._cores = TEMA_CLARO
-        self._container_tela_inicial = None
+        self._janelas = {}
 
         self._configurar_janela()
+        self._montar_daos_e_controllers()
+        self._criar_menu_principal()
+        self._root.deiconify()
 
-        # DAOs indenpendentes
-        self._dao_cliente = Cliente_DAO(self._database)
-        self._dao_funcionario = Funcionario_DAO(self._database)
+    @staticmethod
+    def _mostrar_erro_inesperado(exc, valor, tb):
+        traceback.print_exception(exc, valor, tb)
+        messagebox.showerror("Erro inesperado", f"{exc.__name__}: {valor}")
+
+    def _configurar_janela(self):
+        self._root.title("Sistema ERP - Assistência Técnica")
+        self._root.configure(bg=COR_FUNDO_JANELA)
+        try:
+            self._root.state("zoomed")              # Windows
+        except tk.TclError:
+            try:
+                self._root.attributes("-zoomed", True)  # Linux
+            except tk.TclError:
+                pass
+
+    def _montar_daos_e_controllers(self):
+        # DAOs independentes
+        self._dao_cliente = ClienteDAO(self._database)
+        self._dao_funcionario = FuncionarioDAO(self._database)
         self._dao_equipamento = EquipamentoDAO(self._database, self._dao_cliente)
         self._dao_peca = PecaDAO(self._database)
         self._dao_servico = ServicoDAO(self._database)
+        self._dao_servico_servico = Ordem_servico_Servico_Dao(self._database)
+        self._dao_ordem_servico_peca = OrdemServicoPecaDAO(self._database)
 
-        # Ordem_servico_Servico_Dao recebe uma conexão já aberta (não o Database
-        # inteiro) — é um padrão proposital e diferente do resto das DAOs.
-        conexao_os_servico = self._database.conectar()
-        self._dao_servico_servico = Ordem_servico_Servico_Dao(conexao_os_servico)
-
-        # Ordem_Servico_Peca_DAO segue o padrão normal, recebendo 'database'.
-        self._dao_ordem_servico_peca = Ordem_Servico_Peca_DAO(self._database)
-
-        # 2. Injeta as dependências na DAO principal
-        self._dao_ordem_servico = Ordem_servico_DAO(
-            self._database,
-            self._dao_cliente,
-            self._dao_funcionario,
-            self._dao_equipamento
+        # DAO principal, que depende dos DAOs acima
+        self._dao_ordem_servico = OrdemServicoDAO(
+            self._database, self._dao_cliente, self._dao_funcionario, self._dao_equipamento
         )
 
-        # 3. Controller usa a DAO principal + as DAOs auxiliares
+        # Controllers
         self._controller_ordem_servico = Ordem_servico_Controller(
-            self._dao_ordem_servico,
-            self._dao_cliente,
-            self._dao_funcionario,
-            self._dao_equipamento
+            self._dao_ordem_servico, self._dao_cliente, self._dao_funcionario, self._dao_equipamento
         )
         self._controller_cliente = ClienteController(self._dao_cliente)
         self._controller_funcionario = FuncionarioController(self._dao_funcionario)
@@ -152,418 +112,83 @@ class ErpApplication:
         self._controller_ordem_servico_peca = Ordem_Servico_Peca_Controller(
             self._dao_ordem_servico_peca, self._dao_peca, self._dao_ordem_servico
         )
-        self._criar_tela_inicial()
-
-    def _configurar_janela(self):
-        self._root.title(t("app.titulo"))
-        self._root.state("zoomed")
-        self._root.configure(bg=self._cores["fundo_conteudo"])
 
     # ------------------------------------------------------------------
-    # Alternância de tema e de idioma
+    # Menu principal
     # ------------------------------------------------------------------
 
-    def _reconstruir_tela_inicial(self):
-        """Destrói e recria a tela inicial para refletir o tema/idioma atuais."""
-        if self._container_tela_inicial is not None:
-            self._container_tela_inicial.destroy()
-
-        self._root.configure(bg=self._cores["fundo_conteudo"])
-        self._root.title(t("app.titulo"))
-        self._criar_tela_inicial()
-
-    def _alternar_tema(self):
-        """Troca o tema ativo e reconstrói a tela inicial inteira com a nova paleta."""
-        self._tema_atual = "escuro" if self._tema_atual == "claro" else "claro"
-        self._cores = TEMA_ESCURO if self._tema_atual == "escuro" else TEMA_CLARO
-        self._reconstruir_tela_inicial()
-
-    def _alterar_idioma(self, codigo):
-        """Troca o idioma ativo e reconstrói a tela inicial com os novos textos."""
-        if codigo == idioma_atual():
-            return
-        carregar_idioma(codigo)
-        self._reconstruir_tela_inicial()
-
-    # ------------------------------------------------------------------
-    # Tela inicial: sidebar de navegação + painel principal com módulos
-    # ------------------------------------------------------------------
-
-    def _criar_tela_inicial(self):
-        container = tk.Frame(self._root, bg=self._cores["fundo_conteudo"])
-        container.pack(fill="both", expand=True)
-        self._container_tela_inicial = container
-
-        self._criar_sidebar(container)
-        self._criar_conteudo_principal(container)
-
-    def _criar_sidebar(self, container):
-        sidebar = tk.Frame(container, bg=self._cores["sidebar"], width=260)
-        sidebar.pack(side="left", fill="y")
-        sidebar.pack_propagate(False)
-
-        # Bloco de marca: emblema circular + nome + tagline
-        bloco_marca = tk.Frame(sidebar, bg=self._cores["sidebar"])
-        bloco_marca.pack(fill="x", padx=26, pady=(34, 26))
-
-        emblema = tk.Canvas(bloco_marca, width=46, height=46, bg=self._cores["sidebar"], highlightthickness=0)
-        emblema.create_oval(2, 2, 44, 44, fill=self._cores["accent"], outline="")
-        emblema.create_text(23, 23, text=t("marca.sigla"), fill=self._cores["sidebar"], font=("Segoe UI", 14, "bold"))
-        emblema.pack(anchor="w")
-
-        tk.Label(
-            bloco_marca,
-            text=t("marca.nome"),
-            bg=self._cores["sidebar"],
-            fg="#ffffff",
-            font=FONTE_MARCA,
-            wraplength=200,
-            justify="left",
-        ).pack(anchor="w", pady=(14, 2))
-
-        tk.Label(
-            bloco_marca,
-            text=t("marca.tagline"),
-            bg=self._cores["sidebar"],
-            fg=self._cores["sidebar_texto"],
-            font=FONTE_TAGLINE,
-        ).pack(anchor="w")
-
-        # A navegação principal vive nos cartões do painel; a sidebar fica só
-        # com a marca, o seletor de idioma, o alternador de tema e o "Sair",
-        # deixando o espaço em branco de propósito — é o padrão de apps
-        # corporativos mais enxutos (Stripe, Linear, Notion).
-
-        # Seletor de idioma + alternador de tema + "Sair" ficam ancorados
-        # embaixo da sidebar, mesmo com a janela maximizada
-        rodape = tk.Frame(sidebar, bg=self._cores["sidebar"])
-        rodape.pack(side="bottom", fill="x", pady=(0, 26))
-        tk.Frame(rodape, bg=self._cores["sidebar_hover"], height=1).pack(fill="x", padx=26, pady=(0, 14))
-
-        self._criar_seletor_idioma(rodape)
-
-        if self._tema_atual == "claro":
-            icone_tema, texto_tema = "🌙", t("tema.escuro")
-        else:
-            icone_tema, texto_tema = "☀️", t("tema.claro")
-        self._criar_item_nav(rodape, icone_tema, texto_tema, self._alternar_tema)
-
-        self._criar_item_nav(rodape, "🚪", t("nav.sair"), self._root.destroy, cor_hover=self._cores["sair_hover"])
-
-    def _criar_seletor_idioma(self, container):
-        """Linha '🌐 PT  EN': o idioma ativo fica em dourado, o outro clicável."""
-        cor_sidebar = self._cores["sidebar"]
-        cor_texto = self._cores["sidebar_texto"]
-        cor_texto_ativo = self._cores["sidebar_texto_ativo"]
-
-        linha = tk.Frame(container, bg=cor_sidebar)
-        linha.pack(fill="x", padx=26, pady=(0, 10))
-
-        tk.Label(linha, text="🌐", bg=cor_sidebar, fg=cor_texto, font=FONTE_NAV_ITEM).pack(side="left", padx=(0, 10))
-
-        for codigo in IDIOMAS_DISPONIVEIS:
-            ativo = codigo == idioma_atual()
-            rotulo = tk.Label(
-                linha,
-                text=codigo.upper(),
-                bg=cor_sidebar,
-                fg=self._cores["accent"] if ativo else cor_texto,
-                font=("Segoe UI", 10, "bold" if ativo else "normal"),
-                cursor="hand2",
-            )
-            rotulo.pack(side="left", padx=6)
-            rotulo.bind("<Button-1>", lambda event, c=codigo: self._alterar_idioma(c))
-
-            if not ativo:
-                rotulo.bind("<Enter>", lambda event, r=rotulo: r.configure(fg=cor_texto_ativo))
-                rotulo.bind("<Leave>", lambda event, r=rotulo: r.configure(fg=cor_texto))
-
-    def _criar_item_nav(self, container, icone, titulo, comando, cor_hover=None):
-        """Um item de navegação da sidebar: destaca com uma faixa lateral ao passar o mouse."""
-        if cor_hover is None:
-            cor_hover = self._cores["sidebar_hover"]
-
-        cor_sidebar = self._cores["sidebar"]
-        cor_texto = self._cores["sidebar_texto"]
-        cor_texto_ativo = self._cores["sidebar_texto_ativo"]
-        cor_accent = self._cores["accent"]
-
-        item = tk.Frame(container, bg=cor_sidebar, cursor="hand2")
-        item.pack(fill="x", padx=14, pady=2)
-
-        faixa = tk.Frame(item, bg=cor_sidebar, width=3)
-        faixa.pack(side="left", fill="y")
-
-        conteudo = tk.Frame(item, bg=cor_sidebar)
-        conteudo.pack(side="left", fill="x", expand=True, padx=(10, 0), pady=10)
-
-        rotulo = tk.Label(
-            conteudo,
-            text=f"{icone}   {titulo}",
-            bg=cor_sidebar,
-            fg=cor_texto,
-            font=FONTE_NAV_ITEM,
-            anchor="w",
-        )
-        rotulo.pack(fill="x")
-
-        widgets = (item, faixa, conteudo, rotulo)
-
-        def ao_entrar(event=None):
-            item.configure(bg=cor_hover)
-            conteudo.configure(bg=cor_hover)
-            rotulo.configure(bg=cor_hover, fg=cor_texto_ativo)
-            faixa.configure(bg=cor_accent)
-
-        def ao_sair(event=None):
-            item.configure(bg=cor_sidebar)
-            conteudo.configure(bg=cor_sidebar)
-            rotulo.configure(bg=cor_sidebar, fg=cor_texto)
-            faixa.configure(bg=cor_sidebar)
-
-        for widget in widgets:
-            widget.bind("<Enter>", ao_entrar)
-            widget.bind("<Leave>", ao_sair)
-            widget.bind("<Button-1>", lambda event: comando())
-
-    def _criar_conteudo_principal(self, container):
-        conteudo = tk.Frame(container, bg=self._cores["fundo_conteudo"])
-        conteudo.pack(side="left", fill="both", expand=True)
-
-        self._criar_barra_superior(conteudo)
-
-        bloco_boasvindas = tk.Frame(conteudo, bg=self._cores["fundo_conteudo"])
-        bloco_boasvindas.pack(fill="x", padx=48, pady=(28, 6))
-
-        tk.Label(
-            bloco_boasvindas,
-            text=t("painel.bemvindo"),
-            bg=self._cores["fundo_conteudo"],
-            fg=self._cores["titulo"],
-            font=FONTE_BEMVINDO,
-        ).pack(anchor="w")
-
-        tk.Label(
-            bloco_boasvindas,
-            text=t("painel.subtitulo"),
-            bg=self._cores["fundo_conteudo"],
-            fg=self._cores["subtitulo"],
-            font=FONTE_SUBTITULO_BEMVINDO,
-        ).pack(anchor="w", pady=(6, 0))
-
-        self._criar_grade_modulos(conteudo)
-
-    def _criar_barra_superior(self, container):
-        barra = tk.Frame(
-            container, bg=self._cores["cartao"], height=54,
-            highlightbackground=self._cores["borda_cartao"], highlightthickness=1,
-        )
-        barra.pack(fill="x")
-        barra.pack_propagate(False)
-
-        tk.Label(
-            barra, text=t("painel.titulo"), bg=self._cores["cartao"], fg=self._cores["titulo"],
-            font=FONTE_TOPBAR_TITULO
-        ).pack(side="left", padx=30)
-
-        tk.Label(
-            barra, text=self._data_por_extenso(), bg=self._cores["cartao"], fg=self._cores["subtitulo"],
-            font=FONTE_TOPBAR_DATA
-        ).pack(side="right", padx=30)
-
-    @staticmethod
-    def _data_por_extenso():
-        # Nomes dos dias/meses e a ordem da frase vêm do arquivo do idioma
-        # (pt: "24 de setembro de 2026", en: "September 24, 2026")
-        dias = t("data.dias")
-        meses = t("data.meses")
-        agora = datetime.now()
-        return t(
-            "data.formato",
-            dia_semana=dias[agora.weekday()].capitalize(),
-            dia=agora.day,
-            mes=meses[agora.month - 1],
-            ano=agora.year,
-        )
-
-    def _criar_grade_modulos(self, container):
-        """
-        Grade de cartões (tiles), um por módulo. Usa columnconfigure/rowconfigure
-        com weight para que os cartões cresçam junto com a janela (ela abre
-        'zoomed'), sem sobrar espaço vazio.
-        """
-        grade = tk.Frame(container, bg=self._cores["fundo_conteudo"])
-        grade.pack(fill="both", expand=True, padx=48, pady=(24, 40))
-
-        colunas = 3
-        for coluna in range(colunas):
-            grade.columnconfigure(coluna, weight=1, uniform="col")
-        for linha in range(2):
-            grade.rowconfigure(linha, weight=1, uniform="row")
-
-        for indice, (icone, chave, nome_metodo, cor) in enumerate(MODULOS):
-            comando = getattr(self, nome_metodo)
-            titulo = t(f"{chave}.titulo")
-            descricao = t(f"{chave}.descricao")
-            linha, coluna = divmod(indice, colunas)
-            tile = self._criar_tile(grade, icone, titulo, descricao, comando, cor)
-            tile.grid(row=linha, column=coluna, padx=14, pady=14, sticky="nsew")
-
-    def _criar_tile(self, container, icone, titulo, descricao, comando, cor_destaque):
-        """Cartão clicável: faixa colorida no topo, emblema circular e destaque ao passar o mouse."""
-        cor_cartao = self._cores["cartao"]
-        cor_borda = self._cores["borda_cartao"]
-
-        tile = tk.Frame(
-            container, bg=cor_cartao,
-            highlightbackground=cor_borda, highlightthickness=1, cursor="hand2",
-        )
-
-        tk.Frame(tile, bg=cor_destaque, height=4).pack(fill="x", side="top")
-
-        conteudo = tk.Frame(tile, bg=cor_cartao)
-        conteudo.pack(expand=True, fill="both", padx=24, pady=20)
-
-        emblema = tk.Canvas(conteudo, width=68, height=68, bg=cor_cartao, highlightthickness=0)
-        emblema.create_oval(2, 2, 66, 66, fill=self._misturar_cor(cor_destaque, cor_cartao), outline="")
-        self._desenhar_icone_centralizado(emblema, icone, centro=34, tamanho_fonte=30)
-        emblema.pack(anchor="w")
-
-        rotulo_titulo = tk.Label(
-            conteudo, text=titulo, bg=cor_cartao, fg=self._cores["titulo"], font=FONTE_TILE_TITULO
-        )
-        rotulo_titulo.pack(anchor="w", pady=(18, 6))
-
-        rotulo_descricao = tk.Label(
-            conteudo, text=descricao, bg=cor_cartao, fg=self._cores["subtitulo"], font=FONTE_TILE_DESCRICAO,
-            wraplength=280, justify="left",
-        )
-        rotulo_descricao.pack(anchor="w")
-
-        widgets = (tile, conteudo, emblema, rotulo_titulo, rotulo_descricao)
-
-        def ao_entrar(event=None):
-            tile.configure(highlightbackground=cor_destaque, highlightthickness=2)
-
-        def ao_sair(event=None):
-            tile.configure(highlightbackground=cor_borda, highlightthickness=1)
-
-        for widget in widgets:
-            widget.bind("<Enter>", ao_entrar)
-            widget.bind("<Leave>", ao_sair)
-            widget.bind("<Button-1>", lambda event: comando())
-
-        return tile
-
-    @staticmethod
-    def _desenhar_icone_centralizado(canvas, texto, centro, tamanho_fonte):
-        """
-        Desenha 'texto' (geralmente um emoji) num Canvas e o recentraliza usando
-        a caixa delimitadora real do que foi desenhado. Necessário porque emojis
-        têm espaçamento interno irregular na fonte, então o anchor="center" do
-        Tkinter sozinho não deixa o ícone visualmente no meio do círculo.
-        """
-        item = canvas.create_text(
-            centro, centro, text=texto, font=("Segoe UI Emoji", tamanho_fonte), anchor="center"
-        )
-        caixa = canvas.bbox(item)
-        if caixa:
-            x0, y0, x1, y1 = caixa
-            canvas.move(item, centro - (x0 + x1) / 2, centro - (y0 + y1) / 2)
-        return item
-
-    @staticmethod
-    def _misturar_cor(cor_hex, cor_base_hex, fator=0.82):
-        """
-        Mistura cor_hex em direção a cor_base_hex (o fundo do cartão), gerando
-        uma versão suave dela. Usar o fundo do cartão como base (em vez de
-        branco fixo) é o que faz o emblema se adaptar automaticamente ao tema:
-        no claro vira um pastel claro, no escuro vira um tom mais discreto e
-        próximo do fundo escuro, em vez de um círculo branco berrante.
-        """
-        def para_rgb(hex_str):
-            hex_str = hex_str.lstrip("#")
-            return tuple(int(hex_str[i:i + 2], 16) for i in (0, 2, 4))
-
-        r1, g1, b1 = para_rgb(cor_hex)
-        r2, g2, b2 = para_rgb(cor_base_hex)
-        r = int(r1 + (r2 - r1) * fator)
-        g = int(g1 + (g2 - g1) * fator)
-        b = int(b1 + (b2 - b1) * fator)
-        return f"#{r:02x}{g:02x}{b:02x}"
+    def _criar_menu_principal(self):
+        cores = CORES_MODULOS  # mesma paleta das telas (antes estava repetida aqui)
+        modulos = [
+            ("🧾", "Ordens de Serviço", "Abrir, acompanhar e concluir atendimentos",
+             self._abrir_ordem_servico, cores["ordem_servico"]),
+            ("👤", "Clientes", "Cadastro e histórico de clientes",
+             self._abrir_cliente, cores["cliente"]),
+            ("👷", "Funcionários", "Equipe técnica e administrativa",
+             self._abrir_funcionario, cores["funcionario"]),
+            ("💻", "Equipamentos", "Aparelhos recebidos para reparo",
+             self._abrir_equipamento, cores["equipamento"]),
+            ("🔧", "Serviços", "Catálogo de serviços prestados pela oficina",
+             self._abrir_servico, cores["servico"]),
+            ("🔩", "Peças", "Estoque de peças utilizadas nos reparos",
+             self._abrir_peca, cores["peca"]),
+        ]
+        MenuPrincipal(self._root, modulos, self._root.destroy)
 
     # ------------------------------------------------------------------
     # Abertura das telas (janelas Toplevel)
     # ------------------------------------------------------------------
 
-    def _abrir_ordem_servico(self):
-        # Evita duplicar a abertura da mesma janela no Tkinter
-        if self._janela_ordem_servico is not None and self._janela_ordem_servico.winfo_exists():
-            self._janela_ordem_servico.lift()
-            self._janela_ordem_servico.focus_force()
+    def _abrir_janela(self, chave, view_class, *args):
+        """
+        Abre a view numa Toplevel nova, ou traz pra frente a que já está aberta.
+        Se a construção da view falhar, a janela quebrada é fechada e o erro
+        aparece num popup (antes ficava uma janela vazia e o erro só no terminal).
+        """
+        janela = self._janelas.get(chave)
+        if janela is not None and janela.winfo_exists():
+            janela.lift()
+            janela.focus_force()
             return
 
         janela = tk.Toplevel(self._root)
-        self._janela_ordem_servico = janela
-        Ordem_servico_View(
-            janela,
-            self._controller_ordem_servico,
-            self._dao_cliente,
-            self._dao_funcionario,
-            self._dao_equipamento,
-            self._controller_servico_servico,
-            self._dao_servico,
-            self._controller_ordem_servico_peca,
-            self._dao_peca,
+        try:
+            view_class(janela, *args)
+        except Exception as erro:
+            traceback.print_exc()
+            janela.destroy()
+            messagebox.showerror(
+                "Erro ao abrir a tela",
+                f"{type(erro).__name__}: {erro}",
+                parent=self._root,
+            )
+            return
+        self._janelas[chave] = janela
+
+    def _abrir_ordem_servico(self):
+        self._abrir_janela(
+            "ordem_servico", Ordem_servico_View,
+            self._controller_ordem_servico, self._dao_cliente, self._dao_funcionario,
+            self._dao_equipamento, self._controller_servico_servico, self._dao_servico,
+            self._controller_ordem_servico_peca, self._dao_peca,
         )
 
     def _abrir_cliente(self):
-        # Evita duplicar a abertura da mesma janela no Tkinter
-        if self._janela_cliente is not None and self._janela_cliente.winfo_exists():
-            self._janela_cliente.lift()
-            self._janela_cliente.focus_force()
-            return
-
-        janela = tk.Toplevel(self._root)
-        self._janela_cliente = janela
-        Cliente_view(janela, self._controller_cliente)
+        self._abrir_janela("cliente", Cliente_View, self._controller_cliente)
 
     def _abrir_funcionario(self):
-
-        if self._janela_funcionario is not None and self._janela_funcionario.winfo_exists():
-            self._janela_funcionario.lift()
-            self._janela_funcionario.focus_force()
-            return
-        janela = tk.Toplevel(self._root)
-        self._janela_funcionario = janela
-        Funcionario_View(janela, self._controller_funcionario)
+        self._abrir_janela("funcionario", Funcionario_View, self._controller_funcionario)
 
     def _abrir_equipamento(self):
-        if self._janela_equipamento is not None and self._janela_equipamento.winfo_exists():
-            self._janela_equipamento.lift()
-            self._janela_equipamento.focus_force()
-            return
-        janela = tk.Toplevel(self._root)
-        self._janela_equipamento = janela
-        Equipamento_View(janela, self._controller_equipamento, self._dao_cliente)
+        self._abrir_janela(
+            "equipamento", Equipamento_View, self._controller_equipamento, self._dao_cliente
+        )
 
     def _abrir_servico(self):
-        if self._janela_servico is not None and self._janela_servico.winfo_exists():
-            self._janela_servico.lift()
-            self._janela_servico.focus_force()
-            return
-        janela = tk.Toplevel(self._root)
-        self._janela_servico = janela
-        Servico_View(janela, self._controller_servico)
+        self._abrir_janela("servico", Servico_View, self._controller_servico)
 
     def _abrir_peca(self):
-        if self._janela_peca is not None and self._janela_peca.winfo_exists():
-            self._janela_peca.lift()
-            self._janela_peca.focus_force()
-            return
-        janela = tk.Toplevel(self._root)
-        self._janela_peca = janela
-        Peca_View(janela, self._controller_peca)
+        self._abrir_janela("peca", Peca_View, self._controller_peca)
 
     def run(self):
         self._root.mainloop()

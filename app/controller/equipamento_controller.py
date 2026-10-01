@@ -1,4 +1,5 @@
 from app.models.equipamento import Equipamento
+from app.core.idioma import t
 
 
 class EquipamentoController:

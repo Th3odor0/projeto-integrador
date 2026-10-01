@@ -1,5 +1,5 @@
 from datetime import datetime
-
+from app.core.idioma import t
 from app.models.ordem_servico import Ordem_servico
 from app.core.dataUltils import DataUtils
 

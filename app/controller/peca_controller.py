@@ -1,5 +1,5 @@
 from app.models.pecas import Peca
-
+from app.core import t
 
 class PecaController:
 

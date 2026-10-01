@@ -182,16 +182,6 @@ class MenuPrincipal(tk.Frame):
             barra, text=self._data_por_extenso(), bg=COR_CARTAO, fg=COR_SUBTITULO, font=FONTE_TOPBAR_DATA
         ).pack(side="right", padx=30)
 
-    @staticmethod
-    def _data_por_extenso():
-        dias = ["segunda-feira", "terça-feira", "quarta-feira", "quinta-feira",
-                "sexta-feira", "sábado", "domingo"]
-        meses = ["janeiro", "fevereiro", "março", "abril", "maio", "junho",
-                 "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
-        agora = datetime.now()
-        dia_semana = dias[agora.weekday()].capitalize()
-        return f"{dia_semana}, {agora.day} de {meses[agora.month - 1]} de {agora.year}"
-
     def _criar_grade_modulos(self, container):
         """
         Grade de cartões (tiles), um por módulo. Usa columnconfigure/rowconfigure

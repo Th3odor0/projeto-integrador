@@ -10,22 +10,22 @@ class PecaController:
         erros = []
 
         if not nome or not nome.strip():
-            erros.append("O nome da peça é obrigatório.")
+            erros.append(t("O nome da peça é obrigatório."))
 
         if not codigo or not codigo.strip():
-            erros.append("O código da peça é obrigatório.")
+            erros.append(t("O código da peça é obrigatório."))
 
         try:
             if int(quantidade_estoque) < 0:
-                erros.append("A quantidade em estoque não pode ser negativa.")
+                erros.append(t("A quantidade em estoque não pode ser negativa."))
         except (TypeError, ValueError):
-            erros.append("Quantidade em estoque inválida. Informe um número inteiro.")
+            erros.append(t("Quantidade em estoque inválida. Informe um número inteiro."))
 
         try:
             if float(preco_venda) < 0:
-                erros.append("O preço de venda não pode ser negativo.")
+                erros.append(t("O preço de venda não pode ser negativo."))
         except (TypeError, ValueError):
-            erros.append("Preço de venda inválido. Informe um valor numérico.")
+            erros.append(t("Preço de venda inválido. Informe um valor numérico."))
 
         return erros
 
@@ -42,7 +42,7 @@ class PecaController:
             return False, "\n".join(erros)
 
         if self._codigo_ja_cadastrado(codigo):
-            return False, "Já existe uma peça cadastrada com esse código."
+            return False, t("Já existe uma peça cadastrada com esse código.")
 
         peca = Peca(None, nome.strip(), codigo.strip(), int(quantidade_estoque), float(preco_venda))
 
@@ -50,12 +50,12 @@ class PecaController:
             peca = self.dao.save(peca)
             return True, peca
         except Exception as erro:
-            return False, f"Erro ao cadastrar peça: {erro}"
+            return False, f"{t('Erro ao cadastrar peça:')} {erro}"
 
     def atualizar(self, id, nome, codigo, quantidade_estoque, preco_venda):
         peca = self.dao.get_by_id(id)
         if peca is None:
-            return False, "Peça não encontrada."
+            return False, t("Peça não encontrada.")
 
         erros = self._validar_dados(nome, codigo, quantidade_estoque, preco_venda)
         if erros:
@@ -63,29 +63,29 @@ class PecaController:
 
         existente = self._codigo_ja_cadastrado(codigo)
         if existente and existente.id != id:
-            return False, "Já existe outra peça cadastrada com esse código."
+            return False, t("Já existe outra peça cadastrada com esse código.")
 
         peca.atualizar_dados(nome.strip(), codigo.strip(), int(quantidade_estoque), float(preco_venda))
 
         try:
             sucesso = self.dao.update(peca)
             if sucesso:
-                return True, "Peça atualizada com sucesso."
-            return False, "Não foi possível atualizar a peça."
+                return True, t("Peça atualizada com sucesso.")
+            return False, t("Não foi possível atualizar a peça.")
         except Exception as erro:
-            return False, f"Erro ao atualizar peça: {erro}"
+            return False, f"{t('Erro ao atualizar peça:')} {erro}"
 
     def excluir(self, id):
         if self.dao.get_by_id(id) is None:
-            return False, "Peça não encontrada."
+            return False, t("Peça não encontrada.")
 
         try:
             sucesso = self.dao.delete(id)
             if sucesso:
-                return True, "Peça excluída com sucesso."
-            return False, "Não foi possível excluir a peça."
+                return True, t("Peça excluída com sucesso.")
+            return False, t("Não foi possível excluir a peça.")
         except Exception as erro:
-            return False, f"Erro ao excluir peça: {erro}"
+            return False, f"{t('Erro ao excluir peça:')} {erro}"
 
     def buscar_por_id(self, id):
         return self.dao.get_by_id(id)

@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 from app.core.dataUltils import DataUtils
+from app.core.idioma import t
 from app.view.estilo_view import (
     COR_FUNDO_JANELA, COR_TITULO, COR_SUBTITULO, CORES_MODULOS,
     FONTE_LABEL, FONTE_LABEL_NEGRITO,
@@ -47,11 +48,11 @@ class Ordem_servico_View(tk.Frame):
         self.entradas = {}
         self._lista_pecas_local = {}
 
-        configurar_janela(self.master, "Ordens de Serviço")
+        configurar_janela(self.master, t("Ordens de Serviço"))
         self._estilo_tabela = aplicar_tema_widgets()
 
         criar_cabecalho(
-            self, "Ordens de Serviço", "Abrir, acompanhar e concluir atendimentos",
+            self, t("Ordens de Serviço"), t("Abrir, acompanhar e concluir atendimentos"),
             cor_destaque=CORES_MODULOS["ordem_servico"],
         )
 

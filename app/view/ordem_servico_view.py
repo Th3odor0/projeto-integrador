@@ -115,15 +115,15 @@ class Ordem_servico_View(tk.Frame):
             self.entradas[chave] = self._criar_campo_form(self.aba_dados, label, entry, row=linha, col=0)
             
             if chave == "data_conclusao_texto":
+                linha += 1
                 self.combos["status"] = self._criar_campo_form(self.aba_dados, "Status:", ttk.Combobox(self.aba_dados, state="readonly", width=40, values=self.STATUS_OPCOES), row=linha, col=0)
                 self.combos["status"].current(0)
-                linha += 1
             linha += 1
 
         self.tbl_ordens = self._criar_tabela(self.aba_dados, [
             ("id", "ID", 40, "center"), ("cliente", "Cliente", 140, "w"),
             ("equipamento", "Equipamento", 140, "w"), ("status", "Status", 100, "center"),
-            ("data_entrada", "Entrada", 90, "center")
+            ("data_entrada", "Entrada", 90, "center"), ("data_conclusao", "Conclusão", 90, "center")
         ])
         self.tbl_ordens.grid(row=linha, column=0, columnspan=2, padx=8, pady=14, sticky="nsew")
         self.tbl_ordens.bind("<<TreeviewSelect>>", self._selecionar_ordem)
@@ -224,7 +224,7 @@ class Ordem_servico_View(tk.Frame):
     def _atualizar_treeview(self):
         self.tbl_ordens.delete(*self.tbl_ordens.get_children())
         for o in self.controller.listar_todas():
-            self.tbl_ordens.insert("", tk.END, values=(o.id, o.cliente.nome, f"{o.equipamento.tipo} {o.equipamento.marca}", o.status, DataUtils.data_para_string(o.data_entrada)))
+            self.tbl_ordens.insert("", tk.END, values=(o.id, o.cliente.nome, f"{o.equipamento.tipo} {o.equipamento.marca}", o.status, DataUtils.data_para_string(o.data_entrada), DataUtils.data_para_string(o.data_conclusao)))
 
     def _alternar_estado_widgets(self, widgets, estado):
         """Ativa/Desativa listas de widgets."""

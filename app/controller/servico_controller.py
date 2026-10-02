@@ -1,5 +1,5 @@
 from app.models.servico import Servico
-from app.core.idioma import t
+
 
 
 class ServicoController:
@@ -11,16 +11,16 @@ class ServicoController:
         erros = []
 
         if not nome or not nome.strip():
-            erros.append (t("O nome do serviço é obrigatório."))
+            erros.append (("O nome do serviço é obrigatório."))
 
         if not descricao or not descricao.strip():
-            erros.append (t("A descrição é obrigatória."))
+            erros.append (("A descrição é obrigatória."))
 
         try:
             if float(valor_padrao) < 0:
-                erros.append(t("O valor padrão não pode ser negativo."))
+                erros.append(("O valor padrão não pode ser negativo."))
         except (TypeError, ValueError):
-            erros.append(t("Valor padrão inválido. Informe um valor numérico."))
+            erros.append(("Valor padrão inválido. Informe um valor numérico."))
 
         return erros
 
@@ -40,7 +40,7 @@ class ServicoController:
     def atualizar(self, id, nome, descricao, valor_padrao):
         servico = self.dao.get_by_id(id)
         if servico is None:
-            return False, (t("Serviço não encontrado."))
+            return False, (("Serviço não encontrado."))
 
         erros = self._validar_dados(nome, descricao, valor_padrao)
         if erros:
@@ -51,8 +51,8 @@ class ServicoController:
         try:
             sucesso = self.dao.update(servico)
             if sucesso:
-                return True, (t("Serviço atualizado com sucesso."))
-            return False, (t("Não foi possível atualizar o serviço."))
+                return True, (("Serviço atualizado com sucesso."))
+            return False, (("Não foi possível atualizar o serviço."))
         except Exception as erro:
             return False, f"(t(Erro ao atualizar serviço: {erro}))"
 

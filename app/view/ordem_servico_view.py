@@ -2,7 +2,6 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 from app.core.dataUltils import DataUtils
-from app.core.idioma import t
 from app.view.estilo_view import (
     COR_FUNDO_JANELA, COR_TITULO, COR_SUBTITULO, CORES_MODULOS,
     FONTE_LABEL, FONTE_LABEL_NEGRITO,
@@ -48,11 +47,11 @@ class Ordem_servico_View(tk.Frame):
         self.entradas = {}
         self._lista_pecas_local = {}
 
-        configurar_janela(self.master, t("Ordens de Serviço"))
+        configurar_janela(self.master, "Ordens de Serviço")
         self._estilo_tabela = aplicar_tema_widgets()
 
         criar_cabecalho(
-            self, t("Ordens de Serviço"), t("Abrir, acompanhar e concluir atendimentos"),
+            self, "Ordens de Serviço", "Abrir, acompanhar e concluir atendimentos",
             cor_destaque=CORES_MODULOS["ordem_servico"],
         )
 
@@ -120,6 +119,8 @@ class Ordem_servico_View(tk.Frame):
                 self.combos["status"].current(0)
             linha += 1
 
+        self.entradas["valor_total"].config(state="readonly")
+
         self.tbl_ordens = self._criar_tabela(self.aba_dados, [
             ("id", "ID", 40, "center"), ("cliente", "Cliente", 140, "w"),
             ("equipamento", "Equipamento", 140, "w"), ("status", "Status", 100, "center"),
@@ -177,6 +178,9 @@ class Ordem_servico_View(tk.Frame):
 
         self.combo_peca_aba = self._criar_campo_form(form, "Peça:", ttk.Combobox(form, state="readonly", width=35), row=0, col=0)
         self.combo_peca_aba.bind("<<ComboboxSelected>>", self._preencher_valor_padrao_peca)
+
+        self.lbl_estoque_peca_aba = tk.Label(form, text="", bg=COR_FUNDO_JANELA, fg=COR_SUBTITULO, font=FONTE_LABEL_NEGRITO)
+        self.lbl_estoque_peca_aba.grid(row=0, column=2, sticky="w", padx=8)
 
         self.entry_quantidade_peca_aba = tk.Entry(form, width=10)
         estilizar_entry(self.entry_quantidade_peca_aba)
@@ -255,6 +259,7 @@ class Ordem_servico_View(tk.Frame):
             for k, v in valores.items():
                 self.entradas[k].delete(0, tk.END)
                 self.entradas[k].insert(0, "" if v is None else str(v))
+            self._definir_valor_total(ordem.valor_total)
             self._bloquear_data_entrada(True)
 
             self._atualizar_aba_servicos()
@@ -273,6 +278,7 @@ class Ordem_servico_View(tk.Frame):
         for c in self.combos.values(): c.set("")
         self.combos["status"].current(0)
         for e in self.entradas.values(): e.delete(0, tk.END)
+        self._definir_valor_total(0)
         self._atualizar_aba_servicos()
         self._atualizar_aba_pecas()
 
@@ -328,6 +334,7 @@ class Ordem_servico_View(tk.Frame):
             for i in res:
                 self.tbl_servicos.insert("", tk.END, iid=str(i.id), values=(i.id, i.servico.nome, f"{i.valor_cobrado:.2f}"))
                 self._id_servico_por_item[str(i.id)] = i.id_servico
+        self._atualizar_valor_total_da_ordem()
 
     def _preencher_valor_padrao_servico(self, e=None):
         if s := next((x for x in self.servicos_disp if x.id == self._extrair_id_combo(self.combo_servico_aba.get())), None):
@@ -388,6 +395,7 @@ class Ordem_servico_View(tk.Frame):
         if p := next((x for x in self.pecas_disp if x.id == self._extrair_id_combo(self.combo_peca_aba.get())), None):
             self.entry_valor_unitario_peca_aba.delete(0, tk.END); self.entry_valor_unitario_peca_aba.insert(0, f"{p.preco_venda:.2f}")
             self.entry_quantidade_peca_aba.delete(0, tk.END); self.entry_quantidade_peca_aba.insert(0, "1")
+            self.lbl_estoque_peca_aba.config(text=f"Em estoque: {p.quantidade_estoque}")
 
     def _selecionar_peca_da_aba(self, e=None):
         if sel := self.tbl_pecas.selection(): self._selecionar_valor_combo(self.combo_peca_aba, sel[0])
@@ -421,7 +429,13 @@ class Ordem_servico_View(tk.Frame):
     def _salvar_pecas(self):
         itens = [{"peca_id": k, "quantidade": v["quantidade"], "valor_unitario": v["valor_unitario"]} for k, v in self._lista_pecas_local.items()]
         suc, res = self.ordem_servico_peca_controller.salvar_pecas_da_ordem(self.id_selecionado, itens)
-        messagebox.showinfo("Sucesso", res) if suc else messagebox.showerror("Erro", res)
+        if not suc:
+            messagebox.showerror("Erro", res)
+            return
+        messagebox.showinfo("Sucesso", res)
+        self._carregar_combo_peca_aba()
+        self.lbl_estoque_peca_aba.config(text="")
+        self._atualizar_valor_total_da_ordem()
 
     # ------------------------------------------------------------------
     # UTILS INTERNOS 
@@ -430,6 +444,20 @@ class Ordem_servico_View(tk.Frame):
     def _extrair_id_combo(self, txt): return int(txt.split(" - ")[0]) if txt else None
     def _selecionar_valor_combo(self, cb, id_p): cb.set(next((v for v in cb["values"] if v.split(" - ")[0] == str(id_p)), ""))
     def _formatar_valor(self, v): return f"{float(v):.2f}" if v is not None else ""
+
+    def _definir_valor_total(self, valor):
+        campo = self.entradas["valor_total"]
+        campo.config(state="normal")
+        campo.delete(0, tk.END)
+        campo.insert(0, self._formatar_valor(valor))
+        campo.config(state="readonly")
+
+    def _atualizar_valor_total_da_ordem(self):
+        if self.id_selecionado is None:
+            return
+        ordem = self.controller.buscar_por_id(self.id_selecionado)
+        self._definir_valor_total(ordem.valor_total)
+
     def _executar_operacao(self, op, msg):
         try:
             op(); messagebox.showinfo("Sucesso", msg); self._limpar_campos(); self._atualizar_treeview()

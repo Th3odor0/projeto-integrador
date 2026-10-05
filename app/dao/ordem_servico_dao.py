@@ -105,6 +105,28 @@ class OrdemServicoDAO(DAO):
         finally:
             self.desconectar(cursor, conexao)
 
+    def atualizar_total(self, id_ordem):
+        conexao, cursor = self.conectar()
+        try:
+            cursor.execute(
+                """
+                UPDATE ordens_servico
+                SET valor_total =
+                    COALESCE((SELECT SUM(valor_cobrado) FROM ordem_servico_servicos
+                              WHERE ordem_servico_id = %s), 0)
+                  + COALESCE((SELECT SUM(quantidade * valor_unitario) FROM ordem_servico_pecas
+                              WHERE ordem_servico_id = %s), 0)
+                WHERE id = %s
+                """,
+                (id_ordem, id_ordem, id_ordem),
+            )
+            conexao.commit()
+        except Exception:
+            conexao.rollback()
+            raise
+        finally:
+            self.desconectar(cursor, conexao)
+
     def delete(self, id):
         """
         Exclui a ordem e devolve ao estoque as peças que ela tinha reservado

@@ -1,5 +1,4 @@
 import tkinter as tk
-from datetime import datetime
 
 # --- Paleta corporativa: sidebar em azul-marinho + destaque dourado ---
 COR_SIDEBAR = "#101a2c"
@@ -20,7 +19,6 @@ FONTE_MARCA = ("Segoe UI", 16, "bold")
 FONTE_TAGLINE = ("Segoe UI", 9)
 FONTE_NAV_ITEM = ("Segoe UI", 11)
 FONTE_TOPBAR_TITULO = ("Segoe UI", 11, "bold")
-FONTE_TOPBAR_DATA = ("Segoe UI", 10)
 FONTE_BEMVINDO = ("Segoe UI", 26, "bold")
 FONTE_SUBTITULO_BEMVINDO = ("Segoe UI", 11)
 FONTE_TILE_TITULO = ("Segoe UI", 16, "bold")
@@ -177,10 +175,6 @@ class MenuPrincipal(tk.Frame):
         tk.Label(
             barra, text="Painel Inicial", bg=COR_CARTAO, fg=COR_TITULO, font=FONTE_TOPBAR_TITULO
         ).pack(side="left", padx=30)
-
-        tk.Label(
-            barra, text=self._data_por_extenso(), bg=COR_CARTAO, fg=COR_SUBTITULO, font=FONTE_TOPBAR_DATA
-        ).pack(side="right", padx=30)
 
     def _criar_grade_modulos(self, container):
         """

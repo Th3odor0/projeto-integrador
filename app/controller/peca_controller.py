@@ -1,5 +1,6 @@
 from app.models.pecas import Peca
 
+
 class PecaController:
 
     def __init__(self, peca_dao):

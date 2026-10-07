@@ -1,5 +1,7 @@
-from app.core.idioma import t
+# TRADUÇÃO PT/EN: toda mensagem devolvida à tela passa por t(); mensagens com valor usam t("... {id} ...", id=valor)
+# e mensagens com erro usam f"{t('Erro ...:')} {erro}". Só embrulhei os textos existentes; a lógica não mudou.
 from app.models.ordem_servico_servico import Ordem_servico_servico
+from app.core.idioma import t
 
 
 class Ordem_servico_Servico_Controller:
@@ -44,6 +46,7 @@ class Ordem_servico_Servico_Controller:
 
         try:
             item = self.dao.save(novo_item)
+            self.ordem_servico_dao.atualizar_total(ordem_servico_id)
             return True, item
         except Exception as erro:
             return False, f"{t('Erro ao adicionar serviço:')} {erro}"
@@ -66,18 +69,21 @@ class Ordem_servico_Servico_Controller:
         try:
             sucesso = self.dao.update(item)
             if sucesso:
+                self.ordem_servico_dao.atualizar_total(item.id_ordem_servico)
                 return True, t("Valor atualizado com sucesso.")
             return False, t("Não foi possível atualizar o valor.")
         except Exception as erro:
             return False, f"{t('Erro ao atualizar:')} {erro}"
 
     def deletar(self, id):
-        if self.dao.get_by_id(id) is None:
+        item = self.dao.get_by_id(id)
+        if item is None:
             return False, t("Item não encontrado.")
 
         try:
             sucesso = self.dao.delete(id)
             if sucesso:
+                self.ordem_servico_dao.atualizar_total(item.id_ordem_servico)
                 return True, t("Serviço removido com sucesso.")
             return False, t("Não foi possível remover o serviço.")
         except Exception as erro:

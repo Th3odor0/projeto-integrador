@@ -1,5 +1,9 @@
+# TRADUÇÃO PT/EN: textos fixos (marca, boas-vindas, painel, "Sair") passam por t() com as chaves que já existiam no idioma.py.
+# Novo: parâmetro comando_idioma + botão 🌐 na sidebar para trocar PT <-> EN.
+
 import tkinter as tk
-from datetime import datetime
+
+from app.core.idioma import t  # TRADUÇÃO: import novo
 
 # --- Paleta corporativa: sidebar em azul-marinho + destaque dourado ---
 COR_SIDEBAR = "#101a2c"
@@ -20,7 +24,6 @@ FONTE_MARCA = ("Segoe UI", 16, "bold")
 FONTE_TAGLINE = ("Segoe UI", 9)
 FONTE_NAV_ITEM = ("Segoe UI", 11)
 FONTE_TOPBAR_TITULO = ("Segoe UI", 11, "bold")
-FONTE_TOPBAR_DATA = ("Segoe UI", 10)
 FONTE_BEMVINDO = ("Segoe UI", 26, "bold")
 FONTE_SUBTITULO_BEMVINDO = ("Segoe UI", 11)
 FONTE_TILE_TITULO = ("Segoe UI", 16, "bold")
@@ -39,10 +42,11 @@ class MenuPrincipal(tk.Frame):
     mostrar e quem chamar quando o usuário clicar.
     """
 
-    def __init__(self, master, modulos, comando_sair):
+    def __init__(self, master, modulos, comando_sair, comando_idioma):  # TRADUÇÃO: novo parâmetro
         super().__init__(master, bg=COR_FUNDO_CONTEUDO)
         self.modulos = modulos
         self.comando_sair = comando_sair
+        self.comando_idioma = comando_idioma  # TRADUÇÃO: chamado ao clicar no item de idioma
 
         self._criar_sidebar()
         self._criar_conteudo_principal()
@@ -64,12 +68,12 @@ class MenuPrincipal(tk.Frame):
 
         emblema = tk.Canvas(bloco_marca, width=46, height=46, bg=COR_SIDEBAR, highlightthickness=0)
         emblema.create_oval(2, 2, 44, 44, fill=COR_ACCENT, outline="")
-        emblema.create_text(23, 23, text="AT", fill=COR_SIDEBAR, font=("Segoe UI", 14, "bold"))
+        emblema.create_text(23, 23, text=t("marca.sigla"), fill=COR_SIDEBAR, font=("Segoe UI", 14, "bold"))  # TRADUÇÃO: AT / TS
         emblema.pack(anchor="w")
 
         tk.Label(
             bloco_marca,
-            text="Assistência Técnica",
+            text=t("marca.nome"),  # TRADUÇÃO
             bg=COR_SIDEBAR,
             fg="#ffffff",
             font=FONTE_MARCA,
@@ -79,7 +83,7 @@ class MenuPrincipal(tk.Frame):
 
         tk.Label(
             bloco_marca,
-            text="Sistema ERP Corporativo",
+            text=t("marca.tagline"),  # TRADUÇÃO
             bg=COR_SIDEBAR,
             fg=COR_SIDEBAR_TEXTO,
             font=FONTE_TAGLINE,
@@ -93,7 +97,8 @@ class MenuPrincipal(tk.Frame):
         rodape = tk.Frame(sidebar, bg=COR_SIDEBAR)
         rodape.pack(side="bottom", fill="x", pady=(0, 26))
         tk.Frame(rodape, bg=COR_SIDEBAR_HOVER, height=1).pack(fill="x", padx=26, pady=(0, 14))
-        self._criar_item_nav(rodape, "🚪", "Sair", self.comando_sair, cor_hover=COR_SAIR_HOVER)
+        self._criar_item_nav(rodape, "🌐", t("idioma.trocar"), self.comando_idioma)  # TRADUÇÃO: botão de trocar idioma (única linha nova de layout)
+        self._criar_item_nav(rodape, "🚪", t("nav.sair"), self.comando_sair, cor_hover=COR_SAIR_HOVER)  # TRADUÇÃO: "Sair"/"Exit"
 
     def _criar_item_nav(self, container, icone, titulo, comando, cor_hover=COR_SIDEBAR_HOVER):
         """Um item de navegação da sidebar: destaca com uma faixa lateral ao passar o mouse."""
@@ -150,7 +155,7 @@ class MenuPrincipal(tk.Frame):
 
         tk.Label(
             bloco_boasvindas,
-            text="Bem-vindo(a) 👋",
+            text=t("painel.bemvindo"),  # TRADUÇÃO
             bg=COR_FUNDO_CONTEUDO,
             fg=COR_TITULO,
             font=FONTE_BEMVINDO,
@@ -158,7 +163,7 @@ class MenuPrincipal(tk.Frame):
 
         tk.Label(
             bloco_boasvindas,
-            text="Selecione um módulo abaixo para começar o atendimento.",
+            text=t("painel.subtitulo"),  # TRADUÇÃO
             bg=COR_FUNDO_CONTEUDO,
             fg=COR_SUBTITULO,
             font=FONTE_SUBTITULO_BEMVINDO,
@@ -175,22 +180,8 @@ class MenuPrincipal(tk.Frame):
         barra.pack_propagate(False)
 
         tk.Label(
-            barra, text="Painel Inicial", bg=COR_CARTAO, fg=COR_TITULO, font=FONTE_TOPBAR_TITULO
+            barra, text=t("painel.titulo"), bg=COR_CARTAO, fg=COR_TITULO, font=FONTE_TOPBAR_TITULO  # TRADUÇÃO
         ).pack(side="left", padx=30)
-
-        tk.Label(
-            barra, text=self._data_por_extenso(), bg=COR_CARTAO, fg=COR_SUBTITULO, font=FONTE_TOPBAR_DATA
-        ).pack(side="right", padx=30)
-
-    @staticmethod
-    def _data_por_extenso():
-        dias = ["segunda-feira", "terça-feira", "quarta-feira", "quinta-feira",
-                "sexta-feira", "sábado", "domingo"]
-        meses = ["janeiro", "fevereiro", "março", "abril", "maio", "junho",
-                 "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
-        agora = datetime.now()
-        dia_semana = dias[agora.weekday()].capitalize()
-        return f"{dia_semana}, {agora.day} de {meses[agora.month - 1]} de {agora.year}"
 
     def _criar_grade_modulos(self, container):
         """

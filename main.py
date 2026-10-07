@@ -1,9 +1,13 @@
+# TRADUÇÃO PT/EN: título da janela e cartões do menu usam chaves do idioma.py (t()).
+# Novo: _alternar_idioma() (troca PT <-> EN, fecha as telas abertas e remonta o menu), ligado ao botão 🌐 do menu.
+
 # Coloque este arquivo na RAIZ do projeto (onde está o main.py atual), com o nome main.py.
 import traceback
 import tkinter as tk
 from tkinter import messagebox
 
 from app.core.database import Database
+from app.core.idioma import t, carregar_idioma, idioma_atual  # TRADUÇÃO: + carregar_idioma/idioma_atual para trocar PT <-> EN
 from app.view.estilo_view import COR_FUNDO_JANELA, CORES_MODULOS
 
 # DAOs
@@ -52,8 +56,8 @@ class ErpApplication:
         except Exception as erro:
             traceback.print_exc()
             messagebox.showerror(
-                "Banco de dados",
-                f"Não foi possível conectar ao MySQL:\n\n{erro}",
+                t("Banco de dados"),
+                f"{t('Não foi possível conectar ao MySQL:')}\n\n{erro}",
                 parent=self._root,
             )
             self._root.destroy()
@@ -69,10 +73,10 @@ class ErpApplication:
     @staticmethod
     def _mostrar_erro_inesperado(exc, valor, tb):
         traceback.print_exception(exc, valor, tb)
-        messagebox.showerror("Erro inesperado", f"{exc.__name__}: {valor}")
+        messagebox.showerror(t("Erro inesperado"), f"{exc.__name__}: {valor}")
 
     def _configurar_janela(self):
-        self._root.title("Sistema ERP - Assistência Técnica")
+        self._root.title(t("app.titulo"))  # TRADUÇÃO: título da janela principal
         self._root.configure(bg=COR_FUNDO_JANELA)
         try:
             self._root.state("zoomed")              # Windows
@@ -119,21 +123,32 @@ class ErpApplication:
 
     def _criar_menu_principal(self):
         cores = CORES_MODULOS  # mesma paleta das telas (antes estava repetida aqui)
-        modulos = [
-            ("🧾", "Ordens de Serviço", "Abrir, acompanhar e concluir atendimentos",
+        modulos = [  # TRADUÇÃO: títulos/descrições trocados por chaves do idioma.py
+            ("🧾", t("modulo.os.titulo"), t("modulo.os.descricao"),
              self._abrir_ordem_servico, cores["ordem_servico"]),
-            ("👤", "Clientes", "Cadastro e histórico de clientes",
+            ("👤", t("modulo.cliente.titulo"), t("modulo.cliente.descricao"),
              self._abrir_cliente, cores["cliente"]),
-            ("👷", "Funcionários", "Equipe técnica e administrativa",
+            ("👷", t("modulo.funcionario.titulo"), t("modulo.funcionario.descricao"),
              self._abrir_funcionario, cores["funcionario"]),
-            ("💻", "Equipamentos", "Aparelhos recebidos para reparo",
+            ("💻", t("modulo.equipamento.titulo"), t("modulo.equipamento.descricao"),
              self._abrir_equipamento, cores["equipamento"]),
-            ("🔧", "Serviços", "Catálogo de serviços prestados pela oficina",
+            ("🔧", t("modulo.servico.titulo"), t("modulo.servico.descricao"),
              self._abrir_servico, cores["servico"]),
-            ("🔩", "Peças", "Estoque de peças utilizadas nos reparos",
+            ("🔩", t("modulo.peca.titulo"), t("modulo.peca.descricao"),
              self._abrir_peca, cores["peca"]),
         ]
-        MenuPrincipal(self._root, modulos, self._root.destroy)
+        self._menu = MenuPrincipal(self._root, modulos, self._root.destroy, self._alternar_idioma)  # TRADUÇÃO: guarda o menu e passa o comando de idioma
+
+    def _alternar_idioma(self):
+        """Troca PT <-> EN: fecha as telas abertas (só leem t() ao serem criadas) e remonta o menu."""
+        carregar_idioma("en" if idioma_atual() == "pt" else "pt")
+        for janela in self._janelas.values():
+            if janela.winfo_exists():
+                janela.destroy()
+        self._janelas.clear()
+        self._menu.destroy()
+        self._root.title(t("app.titulo"))
+        self._criar_menu_principal()
 
     # ------------------------------------------------------------------
     # Abertura das telas (janelas Toplevel)
@@ -158,7 +173,7 @@ class ErpApplication:
             traceback.print_exc()
             janela.destroy()
             messagebox.showerror(
-                "Erro ao abrir a tela",
+                t("Erro ao abrir a tela"),
                 f"{type(erro).__name__}: {erro}",
                 parent=self._root,
             )

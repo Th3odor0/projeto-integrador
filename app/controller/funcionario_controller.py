@@ -1,5 +1,7 @@
-from app.core.idioma import t
+# TRADUÇÃO PT/EN: toda mensagem devolvida à tela passa por t(); mensagens com erro usam f"{t('Erro ...:')} {erro}".
+# Só troquei os textos entre parênteses (sem t()) por t(...); a lógica não mudou.
 from app.models.funcionario import Funcionario
+from app.core.idioma import t
 
 
 class FuncionarioController:

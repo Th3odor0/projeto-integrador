@@ -1,4 +1,3 @@
-
 CREATE DATABASE IF NOT EXISTS assistencia_tecnica CHARACTER SET utf8mb4;
 USE assistencia_tecnica;
 

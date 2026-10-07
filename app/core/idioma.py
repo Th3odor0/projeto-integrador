@@ -1,3 +1,6 @@
+# AJUSTES: "idioma.trocar" (PT e EN) agora mostra o idioma ATUAL no botão 🌐 do menu
+# (PT -> "Português", EN -> "English"); + bloco 4 com as chaves novas (main, menu, crud_view_base,
+# ordem_servico_view e controllers). Nada foi removido: o resto do arquivo está igual ao que você enviou.
 """
 Módulo central de internacionalização (i18n) do sistema.
 
@@ -43,6 +46,7 @@ _TEXTOS_PT = {
     "tema.escuro": "Modo escuro",
     "tema.claro": "Modo claro",
     "nav.sair": "Sair",
+    "idioma.trocar": "Português",  # AJUSTE: botão 🌐 mostra o idioma atual
 
     # --- Painel inicial ---
     "painel.titulo": "Painel Inicial",
@@ -82,6 +86,7 @@ _TEXTOS_EN = {
     "tema.escuro": "Dark mode",
     "tema.claro": "Light mode",
     "nav.sair": "Exit",
+    "idioma.trocar": "English",  # AJUSTE: botão 🌐 mostra o idioma atual
 
     # --- Painel inicial ---
     "painel.titulo": "Home Dashboard",
@@ -427,6 +432,63 @@ _TEXTOS_EN.update({
     "O valor unitário da peça '{nome}' não pode ser negativo.": "The unit price of part '{nome}' cannot be negative.",
     "Peças da ordem de serviço atualizadas com sucesso.": "Service order parts updated successfully.",
     "Erro ao salvar peças da ordem:": "Error saving the order's parts:",
+})
+
+# ======================================================================
+# ADIÇÕES (bloco 4 — NOVO): main.py, crud_view_base, ordem_servico_view e
+# os textos dos controllers que ainda não tinham tradução
+# ======================================================================
+_TEXTOS_EN.update({
+    # --- main.py ---
+    "Banco de dados": "Database",
+    "Não foi possível conectar ao MySQL:": "Could not connect to MySQL:",
+    "Erro ao abrir a tela": "Error opening the screen",
+
+    # --- CrudViewBase (telas de Cliente, Equipamento, Funcionario, Peca e Servico) ---
+    "Erro ao carregar a tela": "Error loading the screen",
+    "Cadastro de clientes": "Customer registration",
+    "Cadastro de funcionários": "Employee registration",
+    "Qtd. em estoque:": "Stock quantity:",
+    "Nenhum registro selecionado (ID vazio).": "No record selected (empty ID).",
+    "Cadastrado com sucesso.": "Created successfully.",
+    "Atualizado com sucesso.": "Updated successfully.",
+    "Excluído com sucesso.": "Deleted successfully.",
+    "Tem certeza que deseja excluir esse registro?": "Are you sure you want to delete this record?",
+
+    # --- Ordem_servico_View ---
+    "Conclusão": "Completion",
+    "Valor unit. (R$):": "Unit price ($):",
+    "Selecione/salve uma ordem para gerir serviços.": "Select/save an order to manage services.",
+    "Selecione/salve uma ordem para gerir peças.": "Select/save an order to manage parts.",
+    "Gerenciamento de peças não conectado.": "Parts management not connected.",
+    "Em estoque:": "In stock:",
+    "Quantidade ou valor inválidos.": "Invalid quantity or amount.",
+    "Use 'Alterar' para editar ou 'Novo' para cadastrar.": "Use 'Edit' to modify or 'New' to create.",
+    "Selecione uma ordem.": "Select an order.",
+    "Excluir ordem?": "Delete order?",
+    "Cadastrada com sucesso!": "Created successfully!",
+    "Alterada com sucesso!": "Updated successfully!",
+    "Excluída com sucesso!": "Deleted successfully!",
+    "Remover serviço?": "Remove service?",
+
+    # --- Controllers (textos que estavam sem tradução) ---
+    "Cliente excluído com sucesso.": "Customer deleted successfully.",
+    "Falha ao excluir cliente.": "Failed to delete the customer.",
+    "Erro ao excluir cliente:": "Error deleting customer:",
+    "Erro ao buscar equipamentos:": "Error fetching equipment:",
+    "A mesma peça aparece mais de uma vez na lista.": "The same part appears more than once in the list.",
+    "Selecione o cliente.": "Select the customer.",
+    "Selecione o funcionário.": "Select the employee.",
+    "Selecione o equipamento.": "Select the equipment.",
+    "O problema deve ter no máximo 255 caracteres.": "The problem must be at most 255 characters.",
+
+    # --- DAOs (mensagens de ValueError que chegam à tela) ---
+    "Não é possível excluir: este registro está sendo usado em ordens de serviço ou em outros cadastros.": "Cannot delete: this record is in use by service orders or other records.",
+    "Não é possível excluir: este equipamento está vinculado a ordens de serviço.": "Cannot delete: this equipment is linked to service orders.",
+    "Estoque insuficiente para a peça '{nome}'.": "Insufficient stock for part '{nome}'.",
+
+    # --- Models ---
+    "Status inválido: {status}": "Invalid status: {status}",
 })
 
 IDIOMAS = {

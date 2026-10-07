@@ -1,7 +1,11 @@
+# TRADUÇÃO PT/EN: todos os textos mostrados ao usuário passam por t() (título, subtítulo, rótulos,
+# cabeçalhos da tabela, botões e mensagens). As views filhas não precisam mudar: o texto em português
+# delas já é a chave de tradução no idioma.py.
 import traceback
 import tkinter as tk
 from tkinter import ttk, messagebox
 
+from app.core.idioma import t  # TRADUÇÃO: import novo
 from app.view.estilo_view import (
     COR_FUNDO_JANELA, CORES_MODULOS,
     configurar_janela, criar_cabecalho, criar_cartao, criar_label,
@@ -50,7 +54,7 @@ class CrudViewBase(tk.Frame):
         self._opcoes_combo = {}
         self._objetos = {}  # iid da Treeview -> objeto do model
 
-        configurar_janela(self.master, self.TITULO)
+        configurar_janela(self.master, t(self.TITULO))  # TRADUÇÃO
         self._criar_widgets()
         # Empacota ANTES de carregar os dados: se o carregamento falhar, a
         # janela continua montada e o erro aparece na tela (não em branco).
@@ -61,7 +65,7 @@ class CrudViewBase(tk.Frame):
         except Exception as erro:
             traceback.print_exc()
             messagebox.showerror(
-                "Erro ao carregar a tela",
+                t("Erro ao carregar a tela"),  # TRADUÇÃO
                 f"{type(erro).__name__}: {erro}",
                 parent=self.master,
             )
@@ -88,7 +92,7 @@ class CrudViewBase(tk.Frame):
 
     def _criar_widgets(self):
         criar_cabecalho(
-            self, self.TITULO, self.SUBTITULO,
+            self, t(self.TITULO), t(self.SUBTITULO),  # TRADUÇÃO
             cor_destaque=CORES_MODULOS[self.MODULO],
         )
 
@@ -105,14 +109,14 @@ class CrudViewBase(tk.Frame):
         form = tk.Frame(cartao_form, bg=cartao_form["bg"])
         form.pack(fill="x", padx=24, pady=20)
 
-        criar_label(form, "ID:").grid(row=0, column=0, sticky="w", padx=5, pady=6)
+        criar_label(form, t("ID:")).grid(row=0, column=0, sticky="w", padx=5, pady=6)  # TRADUÇÃO
         self.entry_id = tk.Entry(form, width=40, state="readonly")
         estilizar_entry(self.entry_id)
         self.entry_id.grid(row=0, column=1, padx=5, pady=6)
 
         campos = self._campos_normalizados
         for linha, campo in enumerate(campos, start=1):
-            criar_label(form, campo["rotulo"]).grid(row=linha, column=0, sticky="w", padx=5, pady=6)
+            criar_label(form, t(campo["rotulo"])).grid(row=linha, column=0, sticky="w", padx=5, pady=6)  # TRADUÇÃO
 
             if campo["tipo"] == "combo":
                 combo = ttk.Combobox(form, state="readonly", width=38)
@@ -127,10 +131,10 @@ class CrudViewBase(tk.Frame):
         frame_botoes = tk.Frame(form, bg=form["bg"])
         frame_botoes.grid(row=len(campos) + 1, column=0, columnspan=2, pady=(16, 0))
 
-        criar_botao(frame_botoes, "Salvar", self._salvar).pack(side="left", padx=5)
-        criar_botao(frame_botoes, "Atualizar", self._atualizar).pack(side="left", padx=5)
-        criar_botao(frame_botoes, "Deletar", self._excluir, estilo="perigo").pack(side="left", padx=5)
-        criar_botao(frame_botoes, "Novo", self._limpar_campos).pack(side="left", padx=5)
+        criar_botao(frame_botoes, t("Salvar"), self._salvar).pack(side="left", padx=5)  # TRADUÇÃO
+        criar_botao(frame_botoes, t("Atualizar"), self._atualizar).pack(side="left", padx=5)  # TRADUÇÃO
+        criar_botao(frame_botoes, t("Deletar"), self._excluir, estilo="perigo").pack(side="left", padx=5)  # TRADUÇÃO
+        criar_botao(frame_botoes, t("Novo"), self._limpar_campos).pack(side="left", padx=5)  # TRADUÇÃO
 
     def _montar_lista(self, corpo):
         cartao_lista = criar_cartao(corpo)
@@ -140,10 +144,11 @@ class CrudViewBase(tk.Frame):
         colunas = ["id"] + [c["chave"] for c in self._campos_normalizados]
         self.tree = ttk.Treeview(cartao_lista, columns=colunas, show="headings", style=estilo_tabela)
 
-        self.tree.heading("id", text="ID")
+        self.tree.heading("id", text=t("ID"))  # TRADUÇÃO
         self.tree.column("id", width=40)
         for campo in self._campos_normalizados:
-            self.tree.heading(campo["chave"], text=campo["rotulo"].rstrip(":"))
+            # TRADUÇÃO: traduz o rótulo com os dois pontos (a chave existe no idioma.py) e tira os ":" depois
+            self.tree.heading(campo["chave"], text=t(campo["rotulo"]).rstrip(":"))
             self.tree.column(campo["chave"], width=self.COLUNAS_LARGURA.get(campo["chave"], 140))
 
         self.tree.pack(fill="both", expand=True, side="left", padx=(16, 0), pady=16)
@@ -213,12 +218,12 @@ class CrudViewBase(tk.Frame):
     def _pegar_id(self):
         id_texto = self.entry_id.get()
         if not id_texto.strip():
-            messagebox.showerror("Erro", "Nenhum registro selecionado (ID vazio).")
+            messagebox.showerror(t("Erro"), t("Nenhum registro selecionado (ID vazio)."))  # TRADUÇÃO
             return None
         try:
             return int(id_texto)
         except ValueError:
-            messagebox.showerror("Erro", "O campo ID deve ser um número inteiro.")
+            messagebox.showerror(t("Erro"), t("O campo ID deve ser um número inteiro."))  # TRADUÇÃO
             return None
 
     def _coletar_campos(self):
@@ -245,7 +250,7 @@ class CrudViewBase(tk.Frame):
 
         sucesso, resultado = self.controller.buscar_todos()
         if not sucesso:
-            messagebox.showerror("Erro", resultado)
+            messagebox.showerror(t("Erro"), resultado)  # TRADUÇÃO
             return
 
         campos = self._campos_normalizados
@@ -263,30 +268,30 @@ class CrudViewBase(tk.Frame):
 
     def _salvar(self):
         sucesso, resultado = self.controller.cadastrar(**self._coletar_campos())
-        self._tratar_resultado(sucesso, resultado, "Cadastrado com sucesso.")
+        self._tratar_resultado(sucesso, resultado, t("Cadastrado com sucesso."))  # TRADUÇÃO
 
     def _atualizar(self):
         id_atual = self._pegar_id()
         if id_atual is None:
             return
         sucesso, resultado = self.controller.atualizar(id_atual, **self._coletar_campos())
-        self._tratar_resultado(sucesso, resultado, "Atualizado com sucesso.")
+        self._tratar_resultado(sucesso, resultado, t("Atualizado com sucesso."))  # TRADUÇÃO
 
     def _excluir(self):
         id_atual = self._pegar_id()
         if id_atual is None:
             return
-        if not messagebox.askyesno("Confirmar", "Tem certeza que deseja excluir esse registro?"):
+        if not messagebox.askyesno(t("Confirmar"), t("Tem certeza que deseja excluir esse registro?")):  # TRADUÇÃO
             return
         sucesso, resultado = self.controller.excluir(id_atual)
-        self._tratar_resultado(sucesso, resultado, "Excluído com sucesso.")
+        self._tratar_resultado(sucesso, resultado, t("Excluído com sucesso."))  # TRADUÇÃO
 
     def _tratar_resultado(self, sucesso, resultado, mensagem_padrao):
         if sucesso:
             texto = resultado if isinstance(resultado, str) else mensagem_padrao
-            messagebox.showinfo("Sucesso", texto)
+            messagebox.showinfo(t("Sucesso"), texto)  # TRADUÇÃO
             self._limpar_campos()
             self._carregar_lista()
             self._carregar_opcoes_combos()
         else:
-            messagebox.showerror("Erro", resultado)
+            messagebox.showerror(t("Erro"), resultado)  # TRADUÇÃO

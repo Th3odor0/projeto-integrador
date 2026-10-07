@@ -1,3 +1,8 @@
+# TRADUÇÃO PT/EN: a mensagem "Status inválido: ..." agora passa por t() na hora do erro.
+# Única alteração: import do t e a linha do raise ValueError no setter de status; o resto é igual.
+from app.core.idioma import t
+
+
 class Ordem_servico:
     STATUS_PERMITIDOS = ["aberta", "em andamento", "concluida", "cancelada"]
 
@@ -114,5 +119,5 @@ class Ordem_servico:
     @status.setter
     def status(self, novo_status):
         if novo_status not in self.STATUS_PERMITIDOS:
-            raise ValueError(f"Status inválido: {novo_status}")
+            raise ValueError(t("Status inválido: {status}", status=novo_status))  # TRADUÇÃO
         self._status = novo_status

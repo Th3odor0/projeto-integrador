@@ -1,3 +1,5 @@
+# TRADUÇÃO PT/EN: toda mensagem devolvida à tela passa por t(); mensagens com valor usam t("... {nome} ...", nome=valor).
+# Corrigi os `return False("...", id=...)` (chamavam False como função e davam TypeError): agora são `return False, t(...)`.
 from app.core.idioma import t
 
 
@@ -22,7 +24,7 @@ class Ordem_Servico_Peca_Controller:
     def salvar_pecas_da_ordem(self, ordem_servico_id, itens):
         ordem_servico = self.ordem_servico_dao.get_by_id(ordem_servico_id)
         if ordem_servico is None:
-            return False, f"Ordem de serviço com id {ordem_servico_id} não encontrada."
+            return False, t("Ordem de serviço com id {id} não encontrada.", id=ordem_servico_id)
 
         # O que a ordem já tem reservado: essas unidades já saíram do estoque,
         # então contam como disponíveis para ESTA ordem ao salvar de novo.
@@ -32,7 +34,7 @@ class Ordem_Servico_Peca_Controller:
                 for p in self.dao.get_pecas_por_ordem_servico(ordem_servico)
             }
         except Exception as erro:
-            return False, f"Erro ao buscar peças da ordem: {erro}"
+            return False, f"{t('Erro ao buscar peças da ordem:')} {erro}"
 
         pecas_preparadas = []
         vistos = set()
@@ -42,7 +44,7 @@ class Ordem_Servico_Peca_Controller:
             valor_unitario = item.get("valor_unitario")
 
             if peca_id in vistos:
-                return False, "A mesma peça aparece mais de uma vez na lista."
+                return False, t("A mesma peça aparece mais de uma vez na lista.")
             vistos.add(peca_id)
 
             peca = self.peca_dao.get_by_id(peca_id)
@@ -59,10 +61,8 @@ class Ordem_Servico_Peca_Controller:
 
             disponivel = peca.quantidade_estoque + ja_reservado.get(peca_id, 0)
             if quantidade > disponivel:
-                return False, (
-                    f"Estoque insuficiente para a peça '{peca.nome}' "
-                    f"(disponível: {disponivel})."
-                )
+                return False, t("Estoque insuficiente para a peça '{nome}' (disponível: {disponivel}).",
+                                nome=peca.nome, disponivel=disponivel)
 
             try:
                 valor_unitario = float(valor_unitario)

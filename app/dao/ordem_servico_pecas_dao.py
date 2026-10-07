@@ -1,3 +1,6 @@
+# TRADUÇÃO PT/EN: a mensagem "Estoque insuficiente para a peça '{nome}'." agora passa por t() na hora do erro.
+# Única alteração: import do t e a linha do raise ValueError em substituir_pecas_da_ordem_servico(); o resto é igual.
+from app.core.idioma import t
 from app.models.pecas import Peca
 
 
@@ -85,7 +88,7 @@ class OrdemServicoPecaDAO:
                 )
                 if cursor.rowcount == 0:
                     nome = nomes.get(peca_id, f"id {peca_id}")
-                    raise ValueError(f"Estoque insuficiente para a peça '{nome}'.")
+                    raise ValueError(t("Estoque insuficiente para a peça '{nome}'.", nome=nome))  # TRADUÇÃO
 
             cursor.execute(
                 "DELETE FROM ordem_servico_pecas WHERE ordem_servico_id = %s",

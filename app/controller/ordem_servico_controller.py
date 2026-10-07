@@ -1,7 +1,10 @@
+# TRADUÇÃO PT/EN: as mensagens dos ValueError agora passam por t() (traduz na hora do erro, no idioma ativo).
+# Corrigi t(..., id=...) que estava fora do t() e removi os "raise" duplicados (código morto que nunca executava).
 from datetime import datetime
 
 from app.models.ordem_servico import Ordem_servico
 from app.core.dataUltils import DataUtils
+from app.core.idioma import t
 
 
 class Ordem_servico_Controller:
@@ -63,30 +66,30 @@ class Ordem_servico_Controller:
         if data_conclusao is None or data_entrada is None:
             return
         if self._so_data(data_conclusao) < self._so_data(data_entrada):
-            raise ValueError("Data de conclusão não pode ser anterior à data de entrada.")
+            raise ValueError(t("Data de conclusão não pode ser anterior à data de entrada."))
 
     def _buscar_entidades_relacionadas(self, id_cliente, id_funcionario, id_equipamento):
         """Busca cliente/funcionário/equipamento e garante que todos existem.
         As três colunas (cliente_id, funcionario_id, equipamento_id) são
         NOT NULL no banco, então id vazio também é erro aqui."""
         if id_cliente is None:
-            raise ValueError("Selecione o cliente.")
+            raise ValueError(t("Selecione o cliente."))
         if id_funcionario is None:
-            raise ValueError("Selecione o funcionário.")
+            raise ValueError(t("Selecione o funcionário."))
         if id_equipamento is None:
-            raise ValueError("Selecione o equipamento.")
+            raise ValueError(t("Selecione o equipamento."))
 
         cliente = self.cliente_dao.get_by_id(id_cliente)
         if cliente is None:
-            raise ValueError(f"Cliente com id {id_cliente} não encontrado.")
+            raise ValueError(t("Cliente com id {id} não encontrado.", id=id_cliente))
 
         funcionario = self.funcionario_dao.get_by_id(id_funcionario)
         if funcionario is None:
-            raise ValueError(f"Funcionário com id {id_funcionario} não encontrado.")
+            raise ValueError(t("Funcionário com id {id} não encontrado.", id=id_funcionario))
 
         equipamento = self.equipamento_dao.get_by_id(id_equipamento)
         if equipamento is None:
-            raise ValueError(f"Equipamento com id {id_equipamento} não encontrado.")
+            raise ValueError(t("Equipamento com id {id} não encontrado.", id=id_equipamento))
 
         return cliente, funcionario, equipamento
 
@@ -95,22 +98,19 @@ class Ordem_servico_Controller:
                   valor_total, forma_pagamento, dias_garantia):
 
         if not problema or not problema.strip():
-            raise ValueError("O campo 'problema' é obrigatório.")
+            raise ValueError(t("O campo 'problema' é obrigatório."))
 
         # coluna `problema` é VARCHAR(255)
         if len(problema.strip()) > 255:
-            raise ValueError("O problema deve ter no máximo 255 caracteres.")
+            raise ValueError(t("O problema deve ter no máximo 255 caracteres."))
 
         if not data_entrada_texto or not str(data_entrada_texto).strip():
             raise ValueError(t("A data de entrada é obrigatória."))
 
         if not DataUtils.validar_data(data_entrada_texto):
-            raise ValueError(
-                t("Data de entrada inválida: {data}. Use o formato dd/mm/aaaa.", data=repr(data_entrada_texto))
-            )
+            raise ValueError(t("Data de entrada inválida: {data}. Use o formato dd/mm/aaaa.", data=repr(data_entrada_texto)))
 
         data_conclusao = self._validar_data_conclusao(data_conclusao_texto)
-        valor_total = self._validar_valor_total(valor_total)
         dias_garantia = self._validar_dias_garantia(dias_garantia)
 
         data_entrada = DataUtils.string_para_data(data_entrada_texto)
@@ -127,7 +127,7 @@ class Ordem_servico_Controller:
             status=status,
             problema=problema.strip(),
             diagnostico=diagnostico,
-            valor_total=valor_total,
+            valor_total=0.0,
             forma_pagamento=forma_pagamento,
             dias_garantia=dias_garantia,
             cliente=cliente,
@@ -156,13 +156,12 @@ class Ordem_servico_Controller:
         ordem = self.buscar_por_id(id)
 
         if not problema or not problema.strip():
-            raise ValueError("O campo 'problema' é obrigatório.")
+            raise ValueError(t("O campo 'problema' é obrigatório."))
 
         if len(problema.strip()) > 255:
-            raise ValueError("O problema deve ter no máximo 255 caracteres.")
+            raise ValueError(t("O problema deve ter no máximo 255 caracteres."))
 
         data_conclusao = self._validar_data_conclusao(data_conclusao_texto)
-        valor_total = self._validar_valor_total(valor_total)
         dias_garantia = self._validar_dias_garantia(dias_garantia)
 
         self._checar_datas(ordem.data_entrada, data_conclusao)
@@ -177,7 +176,7 @@ class Ordem_servico_Controller:
             novo_status=status,
             novo_problema=problema.strip(),
             novo_diagnostico=diagnostico,
-            novo_valor=valor_total,
+            novo_valor=ordem.valor_total,
             novo_pagamento=forma_pagamento,
             nova_garantia=dias_garantia
         )

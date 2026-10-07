@@ -1,5 +1,7 @@
-from app.core.idioma import t
+# TRADUÇÃO PT/EN: toda mensagem devolvida à tela passa por t(); mensagens com erro usam f"{t('Erro ...:')} {erro}".
+# Os textos entre parênteses sem t() foram trocados, e as 3 mensagens de excluir (que estavam sem tradução) também.
 from app.models.cliente import Cliente
+from app.core.idioma import t
 
 
 class ClienteController:
@@ -87,10 +89,10 @@ class ClienteController:
         try:
             sucesso = self.dao.delete(id)
             if sucesso:
-                return True, "Cliente excluído com sucesso."
-            return False, "Falha ao excluir cliente."
+                return True, t("Cliente excluído com sucesso.")
+            return False, t("Falha ao excluir cliente.")
         except Exception as erro:
-            return False, f"Erro ao excluir cliente: {erro}"
+            return False, f"{t('Erro ao excluir cliente:')} {erro}"
 
     def buscar_por_id(self, id):
         cliente = self.dao.get_by_id(id)

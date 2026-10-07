@@ -1,4 +1,7 @@
+# TRADUÇÃO PT/EN: toda mensagem devolvida à tela passa por t(); mensagens com erro usam f"{t('Erro ...:')} {erro}".
+# Os textos entre parênteses sem t() foram trocados, e o "Erro ao buscar equipamentos" (que estava sem tradução) também.
 from app.models.equipamento import Equipamento
+from app.core.idioma import t
 
 
 class EquipamentoController:
@@ -95,4 +98,4 @@ class EquipamentoController:
         try:
             return True, self.dao.get_all()
         except Exception as erro:
-            return False, f"Erro ao buscar equipamentos: {erro}"
+            return False, f"{t('Erro ao buscar equipamentos:')} {erro}"

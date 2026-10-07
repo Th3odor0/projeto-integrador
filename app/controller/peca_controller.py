@@ -1,4 +1,7 @@
+# TRADUÇÃO PT/EN: toda mensagem devolvida à tela passa por t(); mensagens com erro usam f"{t('Erro ...:')} {erro}".
+# Troquei os textos entre parênteses (sem t()) por t(...) e traduzi o "Erro ao buscar peças"; a lógica não mudou.
 from app.models.pecas import Peca
+from app.core.idioma import t
 
 
 class PecaController:
@@ -94,7 +97,7 @@ class PecaController:
         try:
             return True, self.dao.get_all()
         except Exception as erro:
-            return False, f"Erro ao buscar peças: {erro}"
+            return False, f"{t('Erro ao buscar peças:')} {erro}"
 
     # dar_baixa_estoque foi removido: o estoque agora é ajustado dentro da
     # transação de OrdemServicoPecaDAO.substituir_pecas_da_ordem_servico

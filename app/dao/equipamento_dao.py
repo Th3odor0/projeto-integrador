@@ -1,3 +1,6 @@
+# TRADUÇÃO PT/EN: a mensagem "Não é possível excluir: este equipamento..." (MSG_EM_USO) agora passa por t() na hora do erro.
+# Única alteração: import do t e a linha do raise ValueError em delete(); o resto é igual.
+from app.core.idioma import t
 from app.dao.dao import DAO
 from app.models.equipamento import Equipamento
 
@@ -125,7 +128,7 @@ class EquipamentoDAO(DAO):
         except Exception as erro:
             conexao.rollback()
             if self._violacao_fk(erro):
-                raise ValueError(self.MSG_EM_USO) from erro
+                raise ValueError(t(self.MSG_EM_USO)) from erro  # TRADUÇÃO: traduz na hora do erro
             raise
         finally:
             self.desconectar(cursor, conexao)

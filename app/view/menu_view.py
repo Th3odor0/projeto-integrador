@@ -2,7 +2,8 @@
 # Novo: parâmetro comando_idioma + botão 🌐 na sidebar para trocar PT <-> EN.
 
 import tkinter as tk
-from datetime import datetime
+
+from app.core.idioma import t  # TRADUÇÃO: função de tradução (era isso que faltava: 8 usos de t() sem import)
 
 # --- Paleta corporativa: sidebar em azul-marinho + destaque dourado ---
 COR_SIDEBAR = "#101a2c"
@@ -89,14 +90,14 @@ class MenuPrincipal(tk.Frame):
         ).pack(anchor="w")
 
         # A navegação principal vive nos cartões do painel; a sidebar fica só
-        # com a marca e o "Sair", deixando o espaço em branco de propósito —
+        # com a marca, o idioma e o "Sair", deixando o espaço em branco de propósito —
         # é o padrão de apps corporativos mais enxutos (Stripe, Linear, Notion).
 
-        # "Sair" fica ancorado embaixo da sidebar, mesmo com a janela maximizada
+        # Idioma e "Sair" ficam ancorados embaixo da sidebar, mesmo com a janela maximizada
         rodape = tk.Frame(sidebar, bg=COR_SIDEBAR)
         rodape.pack(side="bottom", fill="x", pady=(0, 26))
         tk.Frame(rodape, bg=COR_SIDEBAR_HOVER, height=1).pack(fill="x", padx=26, pady=(0, 14))
-        self._criar_item_nav(rodape, "🌐", t("idioma.trocar"), self.comando_idioma)  # TRADUÇÃO: botão de trocar idioma (única linha nova de layout)
+        self._criar_item_nav(rodape, "🌐", t("idioma.trocar"), self.comando_idioma)  # TRADUÇÃO: botão de trocar idioma
         self._criar_item_nav(rodape, "🚪", t("nav.sair"), self.comando_sair, cor_hover=COR_SAIR_HOVER)  # TRADUÇÃO: "Sair"/"Exit"
 
     def _criar_item_nav(self, container, icone, titulo, comando, cor_hover=COR_SIDEBAR_HOVER):

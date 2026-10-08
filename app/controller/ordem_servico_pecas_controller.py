@@ -1,5 +1,3 @@
-# TRADUÇÃO PT/EN: toda mensagem devolvida à tela passa por t(); mensagens com valor usam t("... {nome} ...", nome=valor).
-# Corrigi os `return False("...", id=...)` (chamavam False como função e davam TypeError): agora são `return False, t(...)`.
 from app.core.idioma import t
 
 
@@ -13,13 +11,13 @@ class Ordem_Servico_Peca_Controller:
     def listar_pecas_da_ordem(self, ordem_servico_id):
         ordem_servico = self.ordem_servico_dao.get_by_id(ordem_servico_id)
         if ordem_servico is None:
-            return False, t("Ordem de serviço com id {id} não encontrada.", id=ordem_servico_id)
+            return False("Ordem de serviço com id {id} não encontrada.", id=ordem_servico_id)
 
         try:
             pecas = self.dao.get_pecas_por_ordem_servico(ordem_servico)
             return True, pecas
         except Exception as erro:
-            return False, f"{t('Erro ao buscar peças da ordem:')} {erro}"
+            return False, f"{('Erro ao buscar peças da ordem:')} {erro}"
 
     def salvar_pecas_da_ordem(self, ordem_servico_id, itens):
         ordem_servico = self.ordem_servico_dao.get_by_id(ordem_servico_id)
@@ -49,15 +47,15 @@ class Ordem_Servico_Peca_Controller:
 
             peca = self.peca_dao.get_by_id(peca_id)
             if peca is None:
-                return False, t("Peça com id {id} não encontrada.", id=peca_id)
+                return False("Peça com id {id} não encontrada.", id=peca_id)
 
             try:
                 quantidade = int(quantidade)
             except (TypeError, ValueError):
-                return False, t("Quantidade inválida para a peça '{nome}'.", nome=peca.nome)
+                return False("Quantidade inválida para a peça '{nome}'.", nome=peca.nome)
 
             if quantidade <= 0:
-                return False, t("A quantidade da peça '{nome}' deve ser maior que zero.", nome=peca.nome)
+                return False("A quantidade da peça '{nome}' deve ser maior que zero.", nome=peca.nome)
 
             disponivel = peca.quantidade_estoque + ja_reservado.get(peca_id, 0)
             if quantidade > disponivel:
@@ -67,10 +65,10 @@ class Ordem_Servico_Peca_Controller:
             try:
                 valor_unitario = float(valor_unitario)
             except (TypeError, ValueError):
-                return False, t("Valor unitário inválido para a peça '{nome}'.", nome=peca.nome)
+                return False("Valor unitário inválido para a peça '{nome}'.", nome=peca.nome)
 
             if valor_unitario < 0:
-                return False, t("O valor unitário da peça '{nome}' não pode ser negativo.", nome=peca.nome)
+                return False("O valor unitário da peça '{nome}' não pode ser negativo.", nome=peca.nome)
 
             peca.quantidade_os = quantidade
             peca.valor_unitario_os = valor_unitario
@@ -79,9 +77,9 @@ class Ordem_Servico_Peca_Controller:
         try:
             # o DAO confere o estoque de novo, dentro da transação (vale o dele)
             self.dao.substituir_pecas_da_ordem_servico(ordem_servico, pecas_preparadas)
-            return True, t("Peças da ordem de serviço atualizadas com sucesso.")
+            return True, ("Peças da ordem de serviço atualizadas com sucesso.")
         except Exception as erro:
-            return False, f"{t('Erro ao salvar peças da ordem:')} {erro}"
+            return False, f"{('Erro ao salvar peças da ordem:')} {erro}"
 
     def calcular_total_pecas(self, ordem_servico_id):
         sucesso, resultado = self.listar_pecas_da_ordem(ordem_servico_id)

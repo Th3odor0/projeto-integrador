@@ -4,6 +4,7 @@ from app.models.equipamento import Equipamento
 from app.core.idioma import t
 
 
+
 class EquipamentoController:
 
     def __init__(self, equipamento_dao, cliente_dao):
@@ -14,19 +15,19 @@ class EquipamentoController:
         erros = []
 
         if not tipo or not tipo.strip():
-            erros.append(t("O tipo do equipamento é obrigatório."))
+            erros.append(("O tipo do equipamento é obrigatório."))
 
         if not marca or not marca.strip():
-            erros.append(t("A marca é obrigatória."))
+            erros.append(("A marca é obrigatória."))
 
         if not modelo or not modelo.strip():
-            erros.append(t("O modelo é obrigatório."))
+            erros.append(("O modelo é obrigatório."))
 
         if not numero_serie or not numero_serie.strip():
-            erros.append(t("O número de série é obrigatório."))
+            erros.append(("O número de série é obrigatório."))
 
         if id_cliente is None or self.cliente_dao.get_by_id(id_cliente) is None:
-            erros.append(t("Cliente não encontrado."))
+            erros.append(("Cliente não encontrado."))
 
         return erros
 
@@ -43,7 +44,7 @@ class EquipamentoController:
             return False, "\n".join(erros)
 
         if self._numero_serie_ja_cadastrado(numero_serie):
-            return False, t("Já existe um equipamento cadastrado com esse número de série.")
+            return False, ("Já existe um equipamento cadastrado com esse número de série.")
 
         equipamento = Equipamento(
             None, tipo.strip(), marca.strip(), modelo.strip(), numero_serie.strip(), id_cliente
@@ -53,12 +54,12 @@ class EquipamentoController:
             equipamento = self.dao.save(equipamento)
             return True, equipamento
         except Exception as erro:
-            return False, f"{t('Erro ao cadastrar equipamento:')} {erro}"
+            return False, f"{('Erro ao cadastrar equipamento:')} {erro}"
 
     def atualizar(self, id, tipo, marca, modelo, numero_serie, id_cliente):
         equipamento = self.dao.get_by_id(id)
         if equipamento is None:
-            return False, t("Equipamento não encontrado.")
+            return False, ("Equipamento não encontrado.")
 
         erros = self._validar_dados(tipo, marca, modelo, numero_serie, id_cliente)
         if erros:
@@ -66,7 +67,7 @@ class EquipamentoController:
 
         existente = self._numero_serie_ja_cadastrado(numero_serie)
         if existente and existente.id != id:
-            return False, t("Já existe outro equipamento cadastrado com esse número de série.")
+            return False, ("Já existe outro equipamento cadastrado com esse número de série.")
 
         equipamento.atualizar_dados(tipo.strip(), marca.strip(), modelo.strip(), numero_serie.strip())
         equipamento.id_cliente = id_cliente
@@ -74,22 +75,22 @@ class EquipamentoController:
         try:
             sucesso = self.dao.update(equipamento)
             if sucesso:
-                return True, t("Equipamento atualizado com sucesso.")
-            return False, t("Não foi possível atualizar o equipamento.")
+                return True, ("Equipamento atualizado com sucesso.")
+            return False, ("Não foi possível atualizar o equipamento.")
         except Exception as erro:
-            return False, f"{t('Erro ao atualizar equipamento:')} {erro}"
+            return False, f"{('Erro ao atualizar equipamento:')} {erro}"
 
     def excluir(self, id):
         if self.dao.get_by_id(id) is None:
-            return False, t("Equipamento não encontrado.")
+            return False, ("Equipamento não encontrado.")
 
         try:
             sucesso = self.dao.delete(id)
             if sucesso:
-                return True, t("Equipamento excluído com sucesso.")
-            return False, t("Não foi possível excluir o equipamento.")
+                return True, ("Equipamento excluído com sucesso.")
+            return False, ("Não foi possível excluir o equipamento.")
         except Exception as erro:
-            return False, f"{t('Erro ao excluir equipamento:')} {erro}"
+            return False, f"{('Erro ao excluir equipamento:')} {erro}"
 
     def buscar_por_id(self, id):
         return self.dao.get_by_id(id)

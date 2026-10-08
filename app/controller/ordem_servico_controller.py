@@ -30,10 +30,12 @@ class Ordem_servico_Controller:
         try:
             valor_total = float(valor_total)
         except (TypeError, ValueError):
-            raise ValueError(t("Valor total precisa ser um número."))
+            raise ValueError(("Valor total precisa ser um número."))
+            raise ValueError("Valor total precisa ser um número.")
 
         if valor_total < 0:
-            raise ValueError(t("Valor total não pode ser negativo."))
+            raise ValueError(("Valor total não pode ser negativo."))
+            raise ValueError("Valor total não pode ser negativo.")
 
         return valor_total
 
@@ -45,10 +47,12 @@ class Ordem_servico_Controller:
         try:
             dias_garantia = int(dias_garantia)
         except (TypeError, ValueError):
-            raise ValueError(t("Dias de garantia precisa ser um número inteiro."))
+            raise ValueError(("Dias de garantia precisa ser um número inteiro."))
+            raise ValueError("Dias de garantia precisa ser um número inteiro.")
 
         if dias_garantia < 0:
-            raise ValueError(t("Dias de garantia não pode ser negativo."))
+            raise ValueError(("Dias de garantia não pode ser negativo."))
+            raise ValueError("Dias de garantia não pode ser negativo.")
 
         return dias_garantia
 
@@ -58,7 +62,8 @@ class Ordem_servico_Controller:
             return None
 
         if not DataUtils.validar_data(data_conclusao_texto):
-            raise ValueError(t("Data de conclusão inválida. Use o formato dd/mm/aaaa."))
+            raise ValueError(("Data de conclusão inválida. Use o formato dd/mm/aaaa."))
+            raise ValueError("Data de conclusão inválida. Use o formato dd/mm/aaaa.")
 
         return DataUtils.string_para_data(data_conclusao_texto)
 
@@ -105,10 +110,13 @@ class Ordem_servico_Controller:
             raise ValueError(t("O problema deve ter no máximo 255 caracteres."))
 
         if not data_entrada_texto or not str(data_entrada_texto).strip():
-            raise ValueError(t("A data de entrada é obrigatória."))
+            raise ValueError(("A data de entrada é obrigatória."))
+            raise ValueError("A data de entrada é obrigatória.")
 
         if not DataUtils.validar_data(data_entrada_texto):
-            raise ValueError(t("Data de entrada inválida: {data}. Use o formato dd/mm/aaaa.", data=repr(data_entrada_texto)))
+            raise ValueError(
+                t("Data de entrada inválida: {data}. Use o formato dd/mm/aaaa.", data=repr(data_entrada_texto))
+            )
 
         data_conclusao = self._validar_data_conclusao(data_conclusao_texto)
         dias_garantia = self._validar_dias_garantia(dias_garantia)
@@ -143,7 +151,8 @@ class Ordem_servico_Controller:
     def buscar_por_id(self, id):
         ordem = self.ordem_servico_dao.get_by_id(id)
         if ordem is None:
-            raise ValueError(t("Ordem de serviço com id {id} não encontrada.", id=id))
+            raise ValueError("Ordem de serviço com id {id} não encontrada.", id=id)
+            raise ValueError(f"Ordem de serviço com id {id} não encontrada.")
         return ordem
 
     def atualizar(self, id, id_cliente, id_funcionario, id_equipamento, status,

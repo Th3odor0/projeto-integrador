@@ -2,8 +2,7 @@
 # Novo: parâmetro comando_idioma + botão 🌐 na sidebar para trocar PT <-> EN.
 
 import tkinter as tk
-
-from app.core.idioma import t  # TRADUÇÃO: import novo
+from datetime import datetime
 
 # --- Paleta corporativa: sidebar em azul-marinho + destaque dourado ---
 COR_SIDEBAR = "#101a2c"

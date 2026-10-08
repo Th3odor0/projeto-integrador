@@ -1,5 +1,4 @@
-# TRADUÇÃO PT/EN: toda mensagem devolvida à tela passa por t(); mensagens com valor usam t("... {id} ...", id=valor)
-# e mensagens com erro usam f"{t('Erro ...:')} {erro}". Só embrulhei os textos existentes; a lógica não mudou.
+from app.core.idioma import t
 from app.models.ordem_servico_servico import Ordem_servico_servico
 from app.core.idioma import t
 
@@ -15,7 +14,7 @@ class Ordem_servico_Servico_Controller:
         try:
             itens = self.dao.get_by_ordem_servico(ordem_servico_id)
         except Exception as erro:
-            return False, f"{t('Erro ao buscar serviços da ordem:')} {erro}"
+            return False, f"Erro ao buscar serviços da ordem: {erro}"
 
         for item in itens:
             item.servico = self.servico_dao.get_by_id(item.id_servico)
@@ -24,18 +23,18 @@ class Ordem_servico_Servico_Controller:
 
     def cadastrar(self, ordem_servico_id, servico_id, valor_cobrado):
         if self.ordem_servico_dao.get_by_id(ordem_servico_id) is None:
-            return False, t("Ordem de serviço com id {id} não encontrada.", id=ordem_servico_id)
+            return False, f"Ordem de serviço com id {ordem_servico_id} não encontrada."
 
         if self.servico_dao.get_by_id(servico_id) is None:
-            return False, t("Serviço com id {id} não encontrado.", id=servico_id)
+            return False, f"Serviço com id {servico_id} não encontrado."
 
         try:
             valor_cobrado = float(valor_cobrado)
         except (TypeError, ValueError):
-            return False, t("Valor cobrado precisa ser um número.")
+            return False, "Valor cobrado precisa ser um número."
 
         if valor_cobrado < 0:
-            return False, t("Valor cobrado não pode ser negativo.")
+            return False, "Valor cobrado não pode ser negativo."
 
         novo_item = Ordem_servico_servico(
             id=None,
@@ -49,42 +48,39 @@ class Ordem_servico_Servico_Controller:
             self.ordem_servico_dao.atualizar_total(ordem_servico_id)
             return True, item
         except Exception as erro:
-            return False, f"{t('Erro ao adicionar serviço:')} {erro}"
+            return False, f"Erro ao adicionar serviço: {erro}"
 
     def atualizar(self, id, valor_cobrado):
         item = self.dao.get_by_id(id)
         if item is None:
-            return False, t("Item não encontrado.")
+            return False, "Item não encontrado."
 
         try:
             valor_cobrado = float(valor_cobrado)
         except (TypeError, ValueError):
-            return False, t("Valor cobrado precisa ser um número.")
+            return False, "Valor cobrado precisa ser um número."
 
         if valor_cobrado < 0:
-            return False, t("Valor cobrado não pode ser negativo.")
+            return False, "Valor cobrado não pode ser negativo."
 
         item.atualizar_dados(valor_cobrado)
 
         try:
             sucesso = self.dao.update(item)
             if sucesso:
-                self.ordem_servico_dao.atualizar_total(item.id_ordem_servico)
                 return True, t("Valor atualizado com sucesso.")
             return False, t("Não foi possível atualizar o valor.")
         except Exception as erro:
-            return False, f"{t('Erro ao atualizar:')} {erro}"
+            return False, f"Erro ao atualizar: {erro}"
 
     def deletar(self, id):
-        item = self.dao.get_by_id(id)
-        if item is None:
+        if self.dao.get_by_id(id) is None:
             return False, t("Item não encontrado.")
 
         try:
             sucesso = self.dao.delete(id)
             if sucesso:
-                self.ordem_servico_dao.atualizar_total(item.id_ordem_servico)
                 return True, t("Serviço removido com sucesso.")
             return False, t("Não foi possível remover o serviço.")
         except Exception as erro:
-            return False, f"{t('Erro ao remover:')} {erro}"
+            return False, f"Erro ao remover: {erro}"

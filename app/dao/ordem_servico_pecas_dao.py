@@ -1,5 +1,3 @@
-# TRADUÇÃO PT/EN: a mensagem "Estoque insuficiente para a peça '{nome}'." agora passa por t() na hora do erro.
-# Única alteração: import do t e a linha do raise ValueError em substituir_pecas_da_ordem_servico(); o resto é igual.
 from app.core.idioma import t
 from app.models.pecas import Peca
 

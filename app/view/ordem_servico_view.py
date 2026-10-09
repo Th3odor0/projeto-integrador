@@ -118,7 +118,8 @@ class Ordem_servico_View(tk.Frame):
             self.entradas[chave] = self._criar_campo_form(self.aba_dados, label, entry, row=linha, col=0)
             
             if chave == "data_conclusao_texto":
-                self.combos["status"] = self._criar_campo_form(self.aba_dados, "Status:", ttk.Combobox(self.aba_dados, state="readonly", width=40, values=self.STATUS_OPCOES), row=linha, col=0)
+                linha += 1  # CORREÇÃO: o Status vai na linha de baixo (senão fica em cima da data de conclusão)
+                self.combos["status"] = self._criar_campo_form(self.aba_dados, "Status:", ttk.Combobox(self.aba_dados, state="readonly", width=40, values=[t(s) for s in self.STATUS_OPCOES]), row=linha, col=0)  # exibição traduzida; _status_db() converte de volta
                 self.combos["status"].current(0)
             linha += 1
 
@@ -231,7 +232,7 @@ class Ordem_servico_View(tk.Frame):
     def _atualizar_treeview(self):
         self.tbl_ordens.delete(*self.tbl_ordens.get_children())
         for o in self.controller.listar_todas():
-            self.tbl_ordens.insert("", tk.END, values=(o.id, o.cliente.nome, f"{o.equipamento.tipo} {o.equipamento.marca}", o.status, DataUtils.data_para_string(o.data_entrada)))
+            self.tbl_ordens.insert("", tk.END, values=(o.id, o.cliente.nome, f"{o.equipamento.tipo} {o.equipamento.marca}", t(o.status), DataUtils.data_para_string(o.data_entrada), DataUtils.data_para_string(o.data_conclusao)))  # CORREÇÃO: 6ª coluna (Conclusão)
 
     def _alternar_estado_widgets(self, widgets, estado):
         """Ativa/Desativa listas de widgets."""
@@ -398,6 +399,7 @@ class Ordem_servico_View(tk.Frame):
         if p := next((x for x in self.pecas_disp if x.id == self._extrair_id_combo(self.combo_peca_aba.get())), None):
             self.entry_valor_unitario_peca_aba.delete(0, tk.END); self.entry_valor_unitario_peca_aba.insert(0, f"{p.preco_venda:.2f}")
             self.entry_quantidade_peca_aba.delete(0, tk.END); self.entry_quantidade_peca_aba.insert(0, "1")
+            self.lbl_estoque_peca_aba.config(text=f"Em estoque: {p.quantidade_estoque}")  # CORREÇÃO: mostra o estoque da peça escolhida
 
     def _selecionar_peca_da_aba(self, e=None):
         if sel := self.tbl_pecas.selection(): self._selecionar_valor_combo(self.combo_peca_aba, sel[0])
@@ -431,7 +433,13 @@ class Ordem_servico_View(tk.Frame):
     def _salvar_pecas(self):
         itens = [{"peca_id": k, "quantidade": v["quantidade"], "valor_unitario": v["valor_unitario"]} for k, v in self._lista_pecas_local.items()]
         suc, res = self.ordem_servico_peca_controller.salvar_pecas_da_ordem(self.id_selecionado, itens)
-        messagebox.showinfo("Sucesso", res) if suc else messagebox.showerror("Erro", res)
+        if not suc:
+            messagebox.showerror(t("Erro"), res)
+            return
+        messagebox.showinfo(t("Sucesso"), res)
+        self._carregar_combo_peca_aba()                    # CORREÇÃO: recarrega o estoque atualizado
+        self.lbl_estoque_peca_aba.config(text="")
+        self._atualizar_valor_total_da_ordem()             # CORREÇÃO: novo total da ordem
 
     # ------------------------------------------------------------------
     # UTILS INTERNOS 
@@ -440,6 +448,28 @@ class Ordem_servico_View(tk.Frame):
     def _extrair_id_combo(self, txt): return int(txt.split(" - ")[0]) if txt else None
     def _selecionar_valor_combo(self, cb, id_p): cb.set(next((v for v in cb["values"] if v.split(" - ")[0] == str(id_p)), ""))
     def _formatar_valor(self, v): return f"{float(v):.2f}" if v is not None else ""
+
+    # CORREÇÃO: os três métodos abaixo eram chamados mas não existiam (daí o AttributeError)
+    def _definir_valor_total(self, valor):
+        campo = self.entradas["valor_total"]
+        campo.config(state="normal")
+        campo.delete(0, tk.END)
+        campo.insert(0, self._formatar_valor(valor))
+        campo.config(state="readonly")
+
+    def _atualizar_valor_total_da_ordem(self):
+        if self.id_selecionado is None:
+            return
+        ordem = self.controller.buscar_por_id(self.id_selecionado)
+        self._definir_valor_total(ordem.valor_total)
+
+    def _status_db(self, texto):
+        """Converte o status mostrado na tela (PT ou traduzido) para o valor canônico do banco."""
+        for canonico in self.STATUS_OPCOES:
+            if texto == canonico or texto == t(canonico):
+                return canonico
+        return texto
+
     def _executar_operacao(self, op, msg):
         try:
             op(); messagebox.showinfo(t("Sucesso"), t(msg)); self._limpar_campos(); self._atualizar_treeview()  # TRADUÇÃO: msg ("Cadastrada com sucesso!") passa por t()

@@ -1,7 +1,7 @@
 # TRADUÇÃO PT/EN: toda mensagem devolvida à tela passa por t(); mensagens com erro usam f"{t('Erro ...:')} {erro}".
 # Corrigi os f"(t(Erro ...))" (apareciam com parênteses na tela e nunca traduziam) e as mensagens de excluir/buscar sem t().
 from app.models.servico import Servico
-
+from app.core.idioma import t
 
 class ServicoController:
 
